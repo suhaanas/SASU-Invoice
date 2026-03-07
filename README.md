@@ -1,8 +1,8 @@
-# Invoxa 🧾✨
+# SASU Invoice 🧾✨
 
-![Invoxa Preview](index.html) <!-- Note: Add a real screenshot here later! -->
+![SASU Invoice Preview](index.html) <!-- Note: Add a real screenshot here later! -->
 
-**Invoxa** is a modern, privacy-first, client-side invoice generator built to run entirely in your browser. It allows freelancers and small businesses to quickly create, preview, and export stunning professional invoices without needing an account or a subscription.
+**SASU Invoice** is a modern, privacy-first, client-side invoice generator built to run entirely in your browser. It allows freelancers and small businesses to quickly create, preview, and export stunning professional invoices without needing an account or a subscription.
 
 ## 🚀 Features
 
@@ -19,7 +19,7 @@
 
 ## 🛠️ Tech Stack
 
-Invoxa is built using a lightweight, dependency-free frontend stack to ensure lightning-fast load times:
+SASU Invoice is built using a lightweight, dependency-free frontend stack to ensure lightning-fast load times:
 *   **HTML5 & CSS3:** Semantic structure with a modern, customized styling system.
 *   **Vanilla JavaScript:** Core logic, state management, and DOM manipulation.
 *   **jsPDF & jsPDF-AutoTable:** For precise, professional PDF generation (`cdnjs`).
