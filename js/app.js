@@ -446,12 +446,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function exportPNG() {
         showToast('Generating PNG...');
         const target = document.getElementById('invoicePage');
+
+        // Remove scale temporarily so html2canvas captures full-res A4
+        const originalTransform = target.style.transform;
+        target.style.transform = 'none';
+
         html2canvas(target, { scale: 2, useCORS: true }).then(canvas => {
             const link = document.createElement('a');
             link.download = `Invoice_${fields.invoiceNumber.value}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
             showToast('PNG Downloaded');
+            target.style.transform = originalTransform;
+        }).catch(() => {
+            target.style.transform = originalTransform;
         });
     }
 
@@ -460,10 +468,12 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Generating PDF...');
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'pt', 'a4');
-
-        // We capture the header/footer as image, and draw the table with jsPdf-AutoTable for best text quality
-        // But since the new design is fairly custom, let's just html2canvas the whole sheet scaled into PDF.
         const target = document.getElementById('invoicePage');
+
+        // Remove scale temporarily so html2canvas captures full-res A4
+        const originalTransform = target.style.transform;
+        target.style.transform = 'none';
+
         html2canvas(target, { scale: window.devicePixelRatio || 2, useCORS: true }).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
             const pdfWidth = doc.internal.pageSize.getWidth();
@@ -472,6 +482,10 @@ document.addEventListener('DOMContentLoaded', () => {
             doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
             doc.save(`Invoice_${fields.invoiceNumber.value}.pdf`);
             showToast('PDF Downloaded');
+
+            target.style.transform = originalTransform;
+        }).catch(() => {
+            target.style.transform = originalTransform;
         });
     }
 
@@ -505,6 +519,54 @@ document.addEventListener('DOMContentLoaded', () => {
         t.classList.add('show');
         clearTimeout(toastTimer);
         toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    // --- Mobile Tabs Logic ---
+    const tabNavs = document.querySelectorAll('.tb-step');
+    const tabCols = [
+        document.getElementById('colDetails'),
+        document.getElementById('colPreview'),
+        document.getElementById('colExport')
+    ];
+
+    function switchTab(targetId) {
+        if (window.innerWidth > 1200) return; // Only active on mobile
+
+        tabNavs.forEach(nav => {
+            if (nav.dataset.target === targetId) {
+                nav.classList.add('active');
+            } else {
+                nav.classList.remove('active');
+            }
+        });
+
+        tabCols.forEach(col => {
+            if (col && col.id === targetId) {
+                col.classList.add('active-tab');
+            } else if (col) {
+                col.classList.remove('active-tab');
+            }
+        });
+
+        // Ensure Preview updates any time we come to it
+        if (targetId === 'colPreview') {
+            updatePreview();
+        }
+    }
+
+    tabNavs.forEach(nav => {
+        nav.addEventListener('click', () => switchTab(nav.dataset.target));
+    });
+
+    const nextToPreviewBtn = document.getElementById('nextToPreviewBtn');
+    if (nextToPreviewBtn) nextToPreviewBtn.addEventListener('click', () => switchTab('colPreview'));
+
+    const nextToExportBtn = document.getElementById('nextToExportBtn');
+    if (nextToExportBtn) nextToExportBtn.addEventListener('click', () => switchTab('colExport'));
+
+    // Init first tab on small screens
+    if (window.innerWidth <= 1200) {
+        switchTab('colDetails');
     }
 
     // Run on start

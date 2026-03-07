@@ -639,6 +639,20 @@ select {
     object-fit: contain;
 }
 
+.inv-logo-wrap.logo-shape-square img {
+    border-radius: 0;
+}
+
+.inv-logo-wrap.logo-shape-rounded img {
+    border-radius: 12px;
+}
+
+.inv-logo-wrap.logo-shape-circle img {
+    border-radius: 50%;
+    aspect-ratio: 1/1;
+    object-fit: cover;
+}
+
 .inv-company {
     font-size: 20px;
     font-weight: 700;
@@ -1215,5 +1229,213 @@ select {
         width: 100%;
         box-shadow: none;
         padding: 0;
+    }
+}
+
+/* =========================================================================
+   RESPONSIVE LAYOUT (TABLET & MOBILE)
+   ========================================================================= */
+
+/* Use CSS variable to dynamically track view scaling and adjust A4 bounding box */
+:root {
+    --sheet-scale: 1;
+}
+
+.mobile-next-action {
+    display: none;
+}
+
+@media (max-width: 1200px) {
+    .app-body {
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .form-sidebar,
+    .preview-col,
+    .summary-panel {
+        display: none;
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    .form-sidebar.active-tab {
+        display: block;
+        overflow-y: auto;
+    }
+
+    .preview-col.active-tab {
+        display: flex;
+    }
+
+    .summary-panel.active-tab {
+        display: flex;
+        overflow-y: auto;
+    }
+
+    :root {
+        --sheet-scale: 0.9;
+    }
+
+    .tb-export-group {
+        display: none;
+    }
+
+    .tb-steps {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .tb-step-track {
+        flex: 1;
+        margin: 0 10px;
+    }
+
+    .mobile-next-action {
+        display: block;
+    }
+}
+
+@media (max-width: 900px) {
+    :root {
+        --sheet-scale: 0.75;
+    }
+
+    .tb-step span {
+        display: none;
+        /* Hide step labels, keep numbers */
+    }
+
+    .tb-action.ghost,
+    .tb-action.subtle {
+        padding: 8px;
+        /* Compress buttons */
+        font-size: 0;
+    }
+
+    .tb-action.ghost svg,
+    .tb-action.subtle svg {
+        margin: 0;
+    }
+}
+
+@media (max-width: 700px) {
+    :root {
+        --sheet-scale: 0.6;
+    }
+
+    .topbar {
+        padding: 0 16px;
+    }
+
+    .tb-brand span {
+        display: none;
+        /* Icon only */
+    }
+
+    .inv-sheet-head {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .inv-head-meta {
+        text-align: left;
+        width: 100%;
+    }
+
+    .inv-meta-table td:last-child {
+        text-align: left;
+        padding-left: 20px;
+    }
+}
+
+@media (max-width: 500px) {
+    :root {
+        --sheet-scale: 0.42;
+    }
+
+    .preview-col {
+        min-height: 800px;
+    }
+
+    .topbar {
+        padding: 0 12px;
+    }
+
+    .form-sidebar-inner {
+        padding: 16px;
+    }
+
+    /* Wrap side-by-side inputs into a single column so text is readable */
+    .fg-row {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    /* Redesign line items for small screens */
+    .items-col-labels {
+        display: none;
+    }
+
+    .item-row {
+        flex-wrap: wrap;
+        background: rgba(255, 255, 255, 0.02);
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        position: relative;
+    }
+
+    .ir-desc-wrap {
+        width: 100%;
+        flex: none;
+        margin-bottom: 8px;
+    }
+
+    .ir-qty {
+        width: 60px;
+    }
+
+    .ir-rate {
+        flex: 1;
+    }
+
+    .ir-total {
+        width: auto;
+        padding-top: 0;
+        align-self: center;
+        padding-right: 12px;
+    }
+
+    /* Move delete button overlay strictly to right corner logic */
+    .ir-del {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        height: auto;
+        padding: 4px;
+        z-index: 2;
+    }
+
+    /* Avoid pushing fields off screen with floating AI wand */
+    .ai-wand {
+        right: 40px;
+    }
+}
+
+@media (max-width: 380px) {
+    :root {
+        --sheet-scale: 0.35;
+    }
+}
+
+/* Apply the dynamic scale specifically outside of print logic */
+@media screen {
+    .inv-sheet {
+        transform: scale(var(--sheet-scale));
+        transform-origin: top center;
+        /* Negate the huge empty margin that scale() leaves behind */
+        margin-bottom: calc(1122px * (var(--sheet-scale) - 1));
     }
 }
