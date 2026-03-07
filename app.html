@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- Content Security Policy: Mitigate XSS attacks -->
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com blob: data:; img-src 'self' data: blob: https:; object-src 'none'">
+    <title>Invoxa – Invoice Generator</title>
+    <meta name="description" content="Create, preview, and export professional invoices instantly." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="css/app.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+
+<body>
+
+    <!-- ═══════════════════════════════════════════
+     TOPBAR
+═══════════════════════════════════════════ -->
+    <header class="topbar">
+
+        <!-- Brand -->
+        <a href="index.html" class="tb-brand">
+            <div class="tb-brand-icon">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                    <path d="M4 5h12M4 10h8M4 15h5" stroke="#fff" stroke-width="2" stroke-linecap="round" />
+                    <circle cx="16.5" cy="14.5" r="3" fill="#2dd4bf" />
+                </svg>
+            </div>
+            <span>Invoxa</span>
+        </a>
+
+        <!-- Step progress -->
+        <div class="tb-steps">
+            <div class="tb-step completed">
+                <div class="tb-step-num">
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                        <path d="M2 5l2.5 2.5L8 3" stroke="#fff" stroke-width="1.6" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <span>Details</span>
+            </div>
+            <div class="tb-step-track"></div>
+            <div class="tb-step active">
+                <div class="tb-step-num">2</div>
+                <span>Preview</span>
+            </div>
+            <div class="tb-step-track"></div>
+            <div class="tb-step">
+                <div class="tb-step-num">3</div>
+                <span>Export</span>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="tb-export-group">
+            <button class="tb-action ghost" id="clearBtn">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                </svg>
+                Clear
+            </button>
+            <div class="tb-divider"></div>
+            <button class="tb-action subtle" id="printBtn">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                    <path d="M6 7V3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v4" stroke="currentColor" stroke-width="1.7" />
+                    <rect x="3" y="7" width="14" height="8" rx="2" stroke="currentColor" stroke-width="1.7" />
+                    <rect x="6" y="13" width="8" height="5" rx="1" stroke="currentColor" stroke-width="1.7" />
+                    <circle cx="15.5" cy="10.5" r="0.8" fill="currentColor" />
+                </svg>
+                Print
+            </button>
+            <button class="tb-action subtle" id="pngBtn">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                    <rect x="2" y="2" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.7" />
+                    <circle cx="7" cy="7.5" r="1.5" fill="currentColor" />
+                    <path d="M2 13l5-5 4 4 2.5-3L18 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                PNG
+            </button>
+            <button class="tb-action primary" id="pdfBtn">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                    <path d="M5 2h8l4 4v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" stroke="currentColor"
+                        stroke-width="1.7" />
+                    <path d="M13 2v4h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                    <path d="M7 11h6M7 14h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                </svg>
+                Export PDF
+            </button>
+        </div>
+
+    </header>
+
+    <!-- ═══════════════════════════════════════════
+     APP BODY – 3 COLUMNS
+═══════════════════════════════════════════ -->
+    <div class="app-body">
+
+        <!-- ──────────────────────────────────────
+       COL 1 – FORM SIDEBAR
+  ────────────────────────────────────────── -->
+        <aside class="form-sidebar">
+            <div class="form-sidebar-inner">
+                <form id="invoiceForm" autocomplete="off">
+
+                    <!-- ▸ YOUR BUSINESS ─────────────── -->
+                    <div class="sidebar-section" id="sec-biz">
+                        <button type="button" class="sec-header" data-target="sec-biz">
+                            <div class="sec-icon" style="--ic:#5b5ef4;--ib:rgba(91,94,244,.14)">
+                                <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                                    <rect x="1" y="4" width="14" height="10" rx="2" stroke="var(--ic)"
+                                        stroke-width="1.5" />
+                                    <path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke="var(--ic)"
+                                        stroke-width="1.5" />
+                                    <path d="M8 9v0" stroke="var(--ic)" stroke-width="2" stroke-linecap="round" />
+                                </svg>
+                            </div>
+                            <h3>Your Business</h3>
+                            <div class="sec-chevron">
+                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                    <path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.6"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </div>
+                        </button>
+                        <div class="sec-body open">
+                            <div class="fg-row">
+                                <div class="fg">
+                                    <label>Business Name</label>
+                                    <input id="bizName" type="text" placeholder="Acme Studio"
+                                        value="Your Company Name" />
+                                </div>
+                                <div class="fg">
+                                    <label>Logo File <em>opt.</em></label>
+                                    <input id="logoUrl" type="file" accept="image/*" />
+                                </div>
+                            </div>
+                            <div class="fg">
+                                <label>Address</label>
+                                <textarea id="bizAddress"
+                                    rows="2">123 Business Ave, Suite 100&#10;New York, NY 10001</textarea>
+                            </div>
+                            <div class="fg-row">
+                                <div class="fg">
+                                    <label>Email</label>
+                                    <input id="bizEmail" type="email" placeholder="you@company.com"
+                                        value="hello@yourcompany.com" />
+                                </div>
+                                <div class="fg">
+                                    <label>Phone</label>
+                                    <input id="bizPhone" type="text" placeholder="+1 555 000 0000"
+                                        value="+1 (555) 123-4567" />
+                                </div>
+                            </div>
+                            <div class="fg">
+                                <label>Website <em>opt.</em></label>
+                                <input id="bizWebsite" type="text" placeholder="www.company.com"
+                                    value="www.yourcompany.com" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ▸ INVOICE INFO ──────────────── -->
+                    <div class="sidebar-section" id="sec-inv">
+                        <button type="button" class="sec-header" data-target="sec-inv">
+                            <div class="sec-icon" style="--ic:#2dd4bf;--ib:rgba(45,212,191,.14)">
+                                <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                                    <rect x="2" y="1" width="12" height="14" rx="2" stroke="var(--ic)"
+                                        stroke-width="1.5" />
+                                    <path d="M5 5h6M5 8h4M5 11h3" stroke="var(--ic)" stroke-width="1.4"
+                                        stroke-linecap="round" />
+                                </svg>
+                            </div>
+                            <h3>Invoice Info</h3>
+                            <div class="sec-chevron">
+                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                    <path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.6"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </div>
+                        </button>
+                        <div class="sec-body open">
+                            <div class="fg-row">
+                                <div class="fg">
+                                    <label>Invoice #</label>
+                                    <input id="invoiceNumber" type="text" value="INV-001" />
+                                </div>
+                                <div class="fg">
+                                    <label>Currency</label>
+                                    <select id="currency">
+                                        <option value="$">$ USD</option>
+                                        <option value="€">€ EUR</option>
+                                        <option value="£">£ GBP</option>
+                                        <option value="₹">₹ INR</option>
+                                        <option value="¥">¥ JPY</option>
+                                        <option value="A$">A$ AUD</option>
+                                        <option value="C$">C$ CAD</option>
+                                        <option value="Rs">Rs LKR</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="fg-row">
+                                <div class="fg">
+                                    <label>Issue Date</label>
+                                    <input id="issueDate" type="date" />
+                                </div>
+                                <div class="fg">
+                                    <label>Due Date</label>
+                                    <input id="dueDate" type="date" />
+                                </div>
+                            </div>
+                            <div class="fg-row">
+                                <div class="fg">
+                                    <label>PO Number <em>opt.</em></label>
+                                    <input id="poNumber" type="text" placeholder="PO-2024-001" />
+                                </div>
+                                <div class="fg">
+                                    <label>Status</label>
+                                    <select id="invoiceStatus">
+                                        <option value="Unpaid">Unpaid</option>
+                                        <option value="Paid">Paid</option>
+                                        <option value="Overdue">Overdue</option>
+                                        <option value="Draft">Draft</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ▸ BILL TO ───────────────────── -->
+                    <div class="sidebar-section" id="sec-client">
+                        <button type="button" class="sec-header" data-target="sec-client">
+                            <div class="sec-icon" style="--ic:#f97316;--ib:rgba(249,115,22,.14)">
+                                <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                                    <circle cx="8" cy="5.5" r="3" stroke="var(--ic)" stroke-width="1.5" />
+                                    <path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="var(--ic)" stroke-width="1.5"
+                                        stroke-linecap="round" />
+                                </svg>
+                            </div>
+                            <h3>Bill To</h3>
+                            <div class="sec-chevron">
+                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                    <path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.6"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </div>
+                        </button>
+                        <div class="sec-body open">
+                            <div class="fg-row">
+                                <div class="fg">
+                                    <label>Client Name</label>
+                                    <input id="clientName" type="text" placeholder="Jane Doe" value="John Smith" />
+                                </div>
+                                <div class="fg">
+                                    <label>Company <em>opt.</em></label>
+                                    <input id="clientCompany" type="text" placeholder="Client Inc." />
+                                </div>
+                            </div>
+                            <div class="fg">
+                                <label>Address</label>
+                                <textarea id="clientAddress"
+                                    rows="2">456 Client Street&#10;Los Angeles, CA 90001</textarea>
+                            </div>
+                            <div class="fg-row">
+                                <div class="fg">
+                                    <label>Email</label>
+                                    <input id="clientEmail" type="email" placeholder="client@email.com"
+                                        value="client@email.com" />
+                                </div>
+                                <div class="fg">
+                                    <label>Phone <em>opt.</em></label>
+                                    <input id="clientPhone" type="text" placeholder="+1 555 000 0000" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ▸ LINE ITEMS ────────────────── -->
+                    <div class="sidebar-section" id="sec-items">
+                        <button type="button" class="sec-header" data-target="sec-items">
+                            <div class="sec-icon" style="--ic:#a78bfa;--ib:rgba(167,139,250,.14)">
+                                <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                                    <path d="M2 4h12M2 8h9M2 12h6" stroke="var(--ic)" stroke-width="1.5"
+                                        stroke-linecap="round" />
+                                </svg>
+                            </div>
+                            <h3>Line Items</h3>
+                            <div class="sec-chevron">
+                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                    <path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.6"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </div>
+                        </button>
+                        <div class="sec-body open">
+
+                            <div class="items-col-labels">
+                                <span class="icl-desc">Description</span>
+                                <span class="icl-qty">Qty</span>
+                                <span class="icl-rate">Rate</span>
+                                <span class="icl-total">Total</span>
+                                <span class="icl-del"></span>
+                            </div>
+
+                            <div id="itemsContainer"></div>
+
+                            <button type="button" class="add-row-btn" id="addItemBtn">
+                                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                                    <path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.8"
+                                        stroke-linecap="round" />
+                                </svg>
+                                Add line item
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ▸ NOTES & EXTRAS ────────────── -->
+                    <div class="sidebar-section" id="sec-notes">
+                        <button type="button" class="sec-header" data-target="sec-notes">
+                            <div class="sec-icon" style="--ic:#fb7185;--ib:rgba(251,113,133,.14)">
+                                <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                                    <path d="M3 2h10a1 1 0 0 1 1 1v8l-3 3H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"
+                                        stroke="var(--ic)" stroke-width="1.5" />
+                                    <path d="M11 11v2l2-2" stroke="var(--ic)" stroke-width="1.4" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                    <path d="M5 6h6M5 9h4" stroke="var(--ic)" stroke-width="1.3"
+                                        stroke-linecap="round" />
+                                </svg>
+                            </div>
+                            <h3>Notes &amp; Extras</h3>
+                            <div class="sec-chevron">
+                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                    <path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.6"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </div>
+                        </button>
+                        <div class="sec-body open">
+                            <div class="fg">
+                                <label>Payment Terms</label>
+                                <input id="paymentTerms" type="text" placeholder="e.g. Net 30"
+                                    value="Payment due within 30 days" />
+                            </div>
+                            <div class="fg">
+                                <label style="display:flex; justify-content:space-between; align-items:center;">
+                                    Notes
+                                    <button type="button" class="ai-btn" id="aiNotesBtn"
+                                        title="Auto-generate a professional note">
+                                        <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                                            <path
+                                                d="M8 1v4M8 11v4M1 8h4M11 8h4M3 3l2.5 2.5M10.5 10.5L13 13M3 13l2.5-2.5M10.5 5.5L13 3"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                        </svg>
+                                        AI Writer
+                                    </button>
+                                </label>
+                                <textarea id="notes"
+                                    rows="3">Thank you for your business! We appreciate your prompt payment.</textarea>
+                            </div>
+                            <div class="fg">
+                                <label>Bank / Payment Details <em>opt.</em></label>
+                                <textarea id="bankDetails" rows="2"
+                                    placeholder="Bank: …&#10;IBAN: …&#10;SWIFT: …"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </aside>
+
+        <!-- ──────────────────────────────────────
+       COL 2 – INVOICE PREVIEW
+  ────────────────────────────────────────── -->
+        <main class="preview-col">
+            <div class="preview-scroll">
+                <div class="inv-sheet" id="invoicePage">
+
+                    <!-- Sheet Header -->
+                    <div class="inv-sheet-head">
+                        <div class="inv-from">
+                            <div class="inv-logo-wrap" id="invLogoWrap" style="display:none">
+                                <img id="invLogo" src="" alt="Logo" />
+                            </div>
+                            <div class="inv-from-text">
+                                <p class="inv-company" id="invCompanyName">Your Company Name</p>
+                                <p class="inv-addr" id="invCompanyAddr"></p>
+                                <p class="inv-contact" id="invCompanyContact"></p>
+                            </div>
+                        </div>
+                        <div class="inv-head-meta">
+                            <span class="inv-label-tag" id="invAccentLabel">INVOICE</span>
+                            <p class="inv-number" id="invNumber">#INV-001</p>
+                            <span class="inv-status" id="invStatusBadge">Unpaid</span>
+                            <table class="inv-meta-table">
+                                <tr>
+                                    <td>Issue Date</td>
+                                    <td id="invIssueDate">–</td>
+                                </tr>
+                                <tr>
+                                    <td>Due Date</td>
+                                    <td id="invDueDate">–</td>
+                                </tr>
+                                <tr id="invPORow" style="display:none">
+                                    <td>PO Number</td>
+                                    <td id="invPO">–</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Accent rule -->
+                    <div class="inv-rule" id="invRule"></div>
+
+                    <!-- Bill To -->
+                    <div class="inv-bill-to">
+                        <p class="inv-to-cap" id="invToCap">BILL TO</p>
+                        <p class="inv-to-name" id="invClientName">John Smith</p>
+                        <p class="inv-to-sub" id="invClientCompany"></p>
+                        <p class="inv-to-sub" id="invClientAddr"></p>
+                        <p class="inv-to-sub" id="invClientContact"></p>
+                    </div>
+
+                    <!-- Line items table -->
+                    <table class="inv-items-tbl">
+                        <thead id="invThead">
+                            <tr>
+                                <th class="tc-num">#</th>
+                                <th class="tc-desc">Description</th>
+                                <th class="tc-r">Qty</th>
+                                <th class="tc-r">Rate</th>
+                                <th class="tc-r">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invTbody"></tbody>
+                    </table>
+
+                    <!-- Sheet Footer -->
+                    <div class="inv-sheet-foot">
+                        <div class="inv-foot-notes">
+                            <p class="inv-terms" id="invTerms"></p>
+                            <p class="inv-notes-text" id="invNotes"></p>
+                            <div class="inv-bank-box" id="invBank" style="display:none"></div>
+                        </div>
+                        <div class="inv-totals-mini" id="invTotalsBlock">
+                            <div class="itm-row"><span>Subtotal</span><span id="invSub">$0.00</span></div>
+                            <div class="itm-row itm-disc" id="invDiscRow" style="display:none">
+                                <span id="invDiscLbl">Discount</span><span id="invDiscVal">-$0.00</span>
+                            </div>
+                            <div class="itm-row" id="invShipRow" style="display:none">
+                                <span>Shipping</span><span id="invShipVal">$0.00</span>
+                            </div>
+                            <div class="itm-row" id="invTaxRow" style="display:none">
+                                <span id="invTaxLbl">Tax</span><span id="invTaxVal">$0.00</span>
+                            </div>
+                            <div class="itm-grand" id="invGrandRow">
+                                <span>Total Due</span><span id="invGrand">$0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="inv-thankyou" id="invThankyou">Thank you for your business.</div>
+
+                </div><!-- /inv-sheet -->
+            </div>
+        </main>
+
+        <!-- ──────────────────────────────────────
+       COL 3 – SUMMARY PANEL
+  ────────────────────────────────────────── -->
+        <aside class="summary-panel">
+
+            <!-- Totals card -->
+            <div class="sp-card" id="summaryTotals">
+                <h4 class="sp-card-title">
+                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                        <path d="M1 13l4-4 2 2 3-4 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M1 1h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                    </svg>
+                    Totals
+                </h4>
+
+                <div class="sp-fields">
+                    <div class="sp-field-row">
+                        <label>Discount %</label>
+                        <input id="discount" type="number" value="0" min="0" max="100" placeholder="0" />
+                    </div>
+                    <div class="sp-field-row">
+                        <label>Tax %</label>
+                        <input id="tax" type="number" value="0" min="0" placeholder="0" />
+                    </div>
+                    <div class="sp-field-row">
+                        <label>Shipping</label>
+                        <input id="shipping" type="number" value="0" min="0" placeholder="0.00" />
+                    </div>
+                </div>
+
+                <div class="sp-divider"></div>
+
+                <div class="sp-total-rows">
+                    <div class="sp-tr"><span>Subtotal</span><span id="spSub">$0.00</span></div>
+                    <div class="sp-tr sp-disc" id="spDiscRow" style="display:none">
+                        <span id="spDiscLbl">Discount</span><span id="spDiscVal">-$0.00</span>
+                    </div>
+                    <div class="sp-tr" id="spShipRow" style="display:none">
+                        <span>Shipping</span><span id="spShipVal">$0.00</span>
+                    </div>
+                    <div class="sp-tr" id="spTaxRow" style="display:none">
+                        <span id="spTaxLbl">Tax</span><span id="spTaxVal">$0.00</span>
+                    </div>
+                    <div class="sp-grand">
+                        <span>Total Due</span>
+                        <span id="spGrand">$0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Theme card -->
+            <div class="sp-card">
+                <h4 class="sp-card-title">
+                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                        <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5" />
+                        <circle cx="4.5" cy="5.5" r="1.2" fill="currentColor" />
+                        <circle cx="9.5" cy="5.5" r="1.2" fill="currentColor" opacity=".5" />
+                        <circle cx="7" cy="10" r="1.2" fill="currentColor" opacity=".7" />
+                    </svg>
+                    Theme Color
+                </h4>
+                <div class="theme-swatches" id="colorGrid">
+                    <button type="button" class="swatch active" data-color="#5b5ef4" style="--c:#5b5ef4"
+                        title="Indigo"></button>
+                    <button type="button" class="swatch" data-color="#2dd4bf" style="--c:#2dd4bf" title="Teal"></button>
+                    <button type="button" class="swatch" data-color="#f97316" style="--c:#f97316"
+                        title="Orange"></button>
+                    <button type="button" class="swatch" data-color="#f43f5e" style="--c:#f43f5e" title="Rose"></button>
+                    <button type="button" class="swatch" data-color="#8b5cf6" style="--c:#8b5cf6"
+                        title="Violet"></button>
+                    <button type="button" class="swatch" data-color="#0ea5e9" style="--c:#0ea5e9" title="Sky"></button>
+                    <button type="button" class="swatch" data-color="#10b981" style="--c:#10b981"
+                        title="Emerald"></button>
+                    <button type="button" class="swatch" data-color="#1e293b" style="--c:#1e293b"
+                        title="Slate"></button>
+                </div>
+            </div>
+
+            <!-- Logo Shape card -->
+            <div class="sp-card">
+                <h4 class="sp-card-title">
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                        <path d="M4 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"
+                            stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                    </svg>
+                    Logo Shape
+                </h4>
+                <div class="shape-toggles" id="shapeGrid">
+                    <button type="button" class="shape-btn active" data-shape="square">Square</button>
+                    <button type="button" class="shape-btn" data-shape="rounded">Rounded</button>
+                    <button type="button" class="shape-btn" data-shape="circle">Circle</button>
+                </div>
+            </div>
+
+            <!-- Quick export card -->
+            <div class="sp-card sp-export">
+                <h4 class="sp-card-title">
+                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                        <path d="M7 1v8M4 6l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M2 10v2a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-2" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" />
+                    </svg>
+                    Export
+                </h4>
+                <div class="sp-export-btns">
+                    <button class="sp-export-btn" id="sp-pdfBtn">
+                        <div class="sp-exp-icon pdf">
+                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                                <path d="M5 2h8l4 4v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"
+                                    stroke="currentColor" stroke-width="1.6" />
+                                <path d="M13 2v4h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                                <path d="M7 11h6M7 14h4" stroke="currentColor" stroke-width="1.4"
+                                    stroke-linecap="round" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p>PDF Document</p>
+                            <span>Professional layout</span>
+                        </div>
+                        <svg class="sp-arr" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M2.5 6h7M6 2.5L9.5 6 6 9.5" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    <button class="sp-export-btn" id="sp-pngBtn">
+                        <div class="sp-exp-icon png">
+                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                                <rect x="2" y="2" width="16" height="16" rx="3" stroke="currentColor"
+                                    stroke-width="1.6" />
+                                <circle cx="7" cy="7.5" r="1.5" fill="currentColor" />
+                                <path d="M2 13l5-5 4 4 2.5-3L18 14" stroke="currentColor" stroke-width="1.4"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p>PNG Image</p>
+                            <span>High-res 2× export</span>
+                        </div>
+                        <svg class="sp-arr" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M2.5 6h7M6 2.5L9.5 6 6 9.5" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    <button class="sp-export-btn" id="sp-printBtn">
+                        <div class="sp-exp-icon print">
+                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                                <path d="M6 7V3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v4" stroke="currentColor"
+                                    stroke-width="1.6" />
+                                <rect x="3" y="7" width="14" height="8" rx="2" stroke="currentColor"
+                                    stroke-width="1.6" />
+                                <rect x="6" y="13" width="8" height="5" rx="1" stroke="currentColor"
+                                    stroke-width="1.6" />
+                                <circle cx="15.5" cy="10.5" r="0.8" fill="currentColor" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p>Print</p>
+                            <span>A4 optimized</span>
+                        </div>
+                        <svg class="sp-arr" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M2.5 6h7M6 2.5L9.5 6 6 9.5" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+        </aside>
+
+    </div><!-- /app-body -->
+
+    <!-- TOAST -->
+    <div class="toast" id="toast" role="alert"></div>
+
+    <script src="js/app.js"></script>
+</body>
+
+</html>

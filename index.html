@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- Content Security Policy: Mitigate XSS attacks -->
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; object-src 'none'">
+    <title>Invoxa – Create Beautiful Invoices Instantly</title>
+    <meta name="description"
+        content="Invoxa lets you create stunning professional invoices in seconds. Export as PDF, PNG or print with one click." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="css/landing.css" />
+</head>
+
+<body>
+
+    <!-- ===== NAV ===== -->
+    <nav class="nav">
+        <div class="nav-inner">
+            <a href="#" class="logo">
+                <div class="logo-mark">
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                        <rect width="22" height="22" rx="6" fill="white" fill-opacity="0.15" />
+                        <path d="M6 7h10M6 11h7M6 15h5" stroke="white" stroke-width="2" stroke-linecap="round" />
+                        <circle cx="17" cy="15" r="3" fill="#34d399" />
+                    </svg>
+                </div>
+                <span>Invoxa</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how">How it works</a></li>
+                <li><a href="#formats">Formats</a></li>
+            </ul>
+            <a href="app.html" class="nav-cta">Open App →</a>
+        </div>
+    </nav>
+
+    <!-- ===== HERO ===== -->
+    <section class="hero">
+        <div class="hero-bg">
+            <div class="hero-orb orb1"></div>
+            <div class="hero-orb orb2"></div>
+            <div class="hero-grid"></div>
+        </div>
+        <div class="hero-inner">
+            <div class="hero-badge">
+                <span class="badge-dot"></span>
+                Free to use · No sign-up required
+            </div>
+            <h1 class="hero-title">
+                Create <em>stunning</em><br />invoices in seconds
+            </h1>
+            <p class="hero-sub">
+                Fill in your details, watch your invoice come to life in real-time,<br />
+                then export as PDF, PNG, or print — all in one place.
+            </p>
+            <div class="hero-actions">
+                <a href="app.html" class="btn-hero-primary">
+                    Create Invoice
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </a>
+                <a href="#how" class="btn-hero-ghost">See how it works</a>
+            </div>
+
+            <!-- mock invoice card -->
+            <div class="hero-card">
+                <div class="hcard-header">
+                    <div>
+                        <div class="hcard-company">Acme Design Studio</div>
+                        <div class="hcard-addr">San Francisco, CA</div>
+                    </div>
+                    <div class="hcard-right">
+                        <div class="hcard-inv">INVOICE</div>
+                        <div class="hcard-num">#INV-042</div>
+                        <div class="hcard-badge">Paid</div>
+                    </div>
+                </div>
+                <div class="hcard-bar"></div>
+                <div class="hcard-table">
+                    <div class="hcard-row hcard-head">
+                        <span>Description</span><span>Qty</span><span>Amount</span>
+                    </div>
+                    <div class="hcard-row">
+                        <span>Brand Identity Design</span><span>1</span><span>$3,200</span>
+                    </div>
+                    <div class="hcard-row">
+                        <span>Website Development</span><span>1</span><span>$4,800</span>
+                    </div>
+                    <div class="hcard-row">
+                        <span>Monthly Retainer</span><span>3</span><span>$1,500</span>
+                    </div>
+                </div>
+                <div class="hcard-footer">
+                    <div class="hcard-total-label">Total Due</div>
+                    <div class="hcard-total">$9,500.00</div>
+                </div>
+                <div class="hcard-btns">
+                    <div class="hcard-btn hcard-pdf">PDF</div>
+                    <div class="hcard-btn hcard-png">PNG</div>
+                    <div class="hcard-btn hcard-print">Print</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== STATS STRIP ===== -->
+    <div class="stats-strip">
+        <div class="stats-inner">
+            <div class="stat-item">
+                <div class="stat-num">3 sec</div>
+                <div class="stat-label">avg. time to create</div>
+            </div>
+            <div class="stat-sep"></div>
+            <div class="stat-item">
+                <div class="stat-num">8</div>
+                <div class="stat-label">currency options</div>
+            </div>
+            <div class="stat-sep"></div>
+            <div class="stat-item">
+                <div class="stat-num">6</div>
+                <div class="stat-label">color themes</div>
+            </div>
+            <div class="stat-sep"></div>
+            <div class="stat-item">
+                <div class="stat-num">2</div>
+                <div class="stat-label">AI tools built-in</div>
+            </div>
+            <div class="stat-sep"></div>
+            <div class="stat-item">
+                <div class="stat-num">3</div>
+                <div class="stat-label">export formats</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== FEATURES ===== -->
+    <section class="features" id="features">
+        <div class="section-inner">
+            <div class="section-tag">Features</div>
+            <h2 class="section-title">Everything you need to<br />invoice like a pro</h2>
+
+            <div class="features-grid">
+
+                <div class="feat-card feat-large">
+                    <div class="feat-icon-wrap" style="background: rgba(99,102,241,0.12)">
+                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                            <path d="M4 7h20M4 14h14M4 21h10" stroke="#818cf8" stroke-width="2.5"
+                                stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <h3>Live Preview</h3>
+                    <p>Every keystroke instantly updates your invoice. What you see is exactly what gets exported.</p>
+                    <div class="feat-preview-mini">
+                        <div class="fpm-row">
+                            <div class="fpm-bar w80"></div>
+                            <div class="fpm-dot green"></div>
+                        </div>
+                        <div class="fpm-row">
+                            <div class="fpm-bar w60"></div>
+                            <div class="fpm-dot blue"></div>
+                        </div>
+                        <div class="fpm-row">
+                            <div class="fpm-bar w70"></div>
+                            <div class="fpm-dot purple"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="feat-card">
+                    <div class="feat-icon-wrap" style="background: rgba(52,211,153,0.12)">
+                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                            <rect x="5" y="3" width="18" height="22" rx="3" stroke="#34d399" stroke-width="2.5" />
+                            <path d="M9 10h10M9 15h7" stroke="#34d399" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <h3>PDF Export</h3>
+                    <p>Professionally laid out PDF, pixel-perfect — ready to send to clients.</p>
+                </div>
+
+                <div class="feat-card">
+                    <div class="feat-icon-wrap" style="background: rgba(251,146,60,0.12)">
+                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                            <rect x="3" y="3" width="22" height="22" rx="4" stroke="#fb923c" stroke-width="2.5" />
+                            <circle cx="10" cy="10" r="2" fill="#fb923c" />
+                            <path d="M3 18l6-5 4 4 4-6 8 7" stroke="#fb923c" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                    <h3>PNG Export</h3>
+                    <p>High-quality 2× image export. Use anywhere — email, messaging, posts.</p>
+                </div>
+
+                <div class="feat-card">
+                    <div class="feat-icon-wrap" style="background: rgba(244,63,94,0.12)">
+                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                            <path d="M7 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"
+                                stroke="#f43f5e" stroke-width="2.5" />
+                            <path d="M10 22h8M14 19v3" stroke="#f43f5e" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <h3>Print Ready</h3>
+                    <p>Optimized print layout, perfectly formatted for A4 or Letter paper.</p>
+                </div>
+
+                <div class="feat-card">
+                    <div class="feat-icon-wrap" style="background: rgba(168,85,247,0.12)">
+                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                            <circle cx="14" cy="14" r="10" stroke="#a855f7" stroke-width="2.5" />
+                            <path d="M10 14c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4" stroke="#a855f7" stroke-width="2"
+                                stroke-linecap="round" />
+                            <circle cx="14" cy="14" r="1.5" fill="#a855f7" />
+                        </svg>
+                    </div>
+                    <h3>8 Currencies</h3>
+                    <p>USD, EUR, GBP, INR, JPY, AUD, CAD, LKR — switch with a single click.</p>
+                </div>
+
+                <div class="feat-card feat-large">
+                    <div class="feat-icon-wrap" style="background: rgba(14,165,233,0.12)">
+                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                            <circle cx="9" cy="9" r="4" stroke="#38bdf8" stroke-width="2.5" />
+                            <circle cx="9" cy="9" r="1.5" fill="#38bdf8" />
+                            <circle cx="19" cy="9" r="4" stroke="#38bdf8" stroke-width="2.5" opacity="0.5" />
+                            <circle cx="14" cy="19" r="4" stroke="#38bdf8" stroke-width="2.5" opacity="0.7" />
+                        </svg>
+                    </div>
+                    <h3>6 Color Themes</h3>
+                    <p>Make every invoice match your brand. Pick from curated professional palettes with instant
+                        preview.</p>
+                    <div class="theme-dots">
+                        <div class="tdot" style="background:#6366f1"></div>
+                        <div class="tdot" style="background:#34d399"></div>
+                        <div class="tdot" style="background:#fb923c"></div>
+                        <div class="tdot" style="background:#f43f5e"></div>
+                        <div class="tdot" style="background:#a855f7"></div>
+                        <div class="tdot" style="background:#38bdf8"></div>
+                    </div>
+                </div>
+
+                <div class="feat-card feat-large">
+                    <div class="feat-icon-wrap" style="background: rgba(168,85,247,0.12)">
+                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                            <path d="M14 2v6M14 20v6M2 14h6M20 14h6M5 5l4 4M19 19l4 4M5 23l4-4M19 5l4 4"
+                                stroke="#a855f7" stroke-width="2.5" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <h3>AI Invoice Assistant</h3>
+                    <p>Work smarter, not harder. Use the <strong>Magic Wand</strong> to automatically expand shorthand
+                        descriptions into professional billing language. Or use the <strong>AI Writer</strong> to
+                        automatically generate polite, context-aware payment notes and thank-you messages.</p>
+                </div>
+
+                <div class="feat-card">
+                    <div class="feat-icon-wrap" style="background: rgba(100,116,139,0.12)">
+                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                            <rect x="5" y="5" width="18" height="18" rx="4" stroke="#64748b" stroke-width="2.5" />
+                            <circle cx="14" cy="14" r="5" stroke="#64748b" stroke-width="2.5" />
+                        </svg>
+                    </div>
+                    <h3>Logo Customization</h3>
+                    <p>Upload your own company logo and choose exactly how it's styled: elegant square, subtle rounded
+                        corners, or a modern circular avatar.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== HOW IT WORKS ===== -->
+    <section class="how" id="how">
+        <div class="section-inner">
+            <div class="section-tag">How it works</div>
+            <h2 class="section-title">Three steps,<br />one perfect invoice</h2>
+
+            <div class="steps-row">
+                <div class="step-card">
+                    <div class="step-num">01</div>
+                    <h3>Enter your details</h3>
+                    <p>Fill in your business info, client details, and line items. Auto-calculated totals, taxes, and
+                        discounts.</p>
+                </div>
+                <div class="step-connector">
+                    <svg width="40" height="16" viewBox="0 0 40 16" fill="none">
+                        <path d="M0 8h36M32 4l4 4-4 4" stroke="#6366f1" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">02</div>
+                    <h3>Preview live</h3>
+                    <p>Your invoice renders instantly as you type. Choose your theme color, currency, and layout.</p>
+                </div>
+                <div class="step-connector">
+                    <svg width="40" height="16" viewBox="0 0 40 16" fill="none">
+                        <path d="M0 8h36M32 4l4 4-4 4" stroke="#6366f1" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <div class="step-card step-highlight">
+                    <div class="step-num">03</div>
+                    <h3>Export & send</h3>
+                    <p>Download as PDF or PNG, or print directly. Share with your client in seconds.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FORMATS ===== -->
+    <section class="formats" id="formats">
+        <div class="section-inner">
+            <div class="section-tag">Export Options</div>
+            <h2 class="section-title">Pick your format</h2>
+            <div class="formats-grid">
+                <div class="format-card">
+                    <div class="format-icon pdf-icon">PDF</div>
+                    <h3>PDF Document</h3>
+                    <p>Industry-standard format. Send via email, upload to accounting software, or archive.</p>
+                    <ul>
+                        <li>Perfectly formatted A4 layout</li>
+                        <li>Includes all fields & totals</li>
+                        <li>Shareable link-ready</li>
+                    </ul>
+                </div>
+                <div class="format-card format-highlight">
+                    <div class="format-icon png-icon">PNG</div>
+                    <h3>PNG Image</h3>
+                    <p>High-resolution 2× image. Embed in emails, share on WhatsApp, or post on social media.</p>
+                    <ul>
+                        <li>2× retina resolution</li>
+                        <li>Transparent background option</li>
+                        <li>Universal compatibility</li>
+                    </ul>
+                </div>
+                <div class="format-card">
+                    <div class="format-icon print-icon">
+                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                            <path d="M7 5h14a2 2 0 0 1 2 2v8H5V7a2 2 0 0 1 2-2z" stroke="currentColor"
+                                stroke-width="2" />
+                            <rect x="5" y="15" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2" />
+                            <path d="M9 20h10M9 23h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <h3>Print</h3>
+                    <p>Browser print dialog with optimized print stylesheet. Works with any home or office printer.</p>
+                    <ul>
+                        <li>A4 & Letter size support</li>
+                        <li>Clean print-only layout</li>
+                        <li>No watermarks</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== CTA ===== -->
+    <section class="cta-section">
+        <div class="cta-inner">
+            <div class="cta-orb"></div>
+            <div class="section-tag light-tag">Ready?</div>
+            <h2 class="cta-title">Start creating your invoice now</h2>
+            <p class="cta-sub">No account. No credit card. No limits.<br />Just open the app and go.</p>
+            <a href="app.html" class="btn-hero-primary btn-cta">
+                Create Invoice — It's Free
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+        <div class="footer-inner">
+            <a href="#" class="logo">
+                <div class="logo-mark logo-mark-sm">
+                    <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+                        <rect width="22" height="22" rx="6" fill="white" fill-opacity="0.15" />
+                        <path d="M6 7h10M6 11h7M6 15h5" stroke="white" stroke-width="2" stroke-linecap="round" />
+                        <circle cx="17" cy="15" r="3" fill="#34d399" />
+                    </svg>
+                </div>
+                <span>Invoxa</span>
+            </a>
+            <p class="footer-copy">Free invoice generator. No sign-up required.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(a => {
+            a.addEventListener('click', e => {
+                const id = a.getAttribute('href').slice(1);
+                const el = document.getElementById(id);
+                if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth' }); }
+            });
+        });
+
+        // Nav scroll effect
+        const nav = document.querySelector('.nav');
+        window.addEventListener('scroll', () => {
+            nav.classList.toggle('nav-scrolled', window.scrollY > 40);
+        });
+    </script>
+</body>
+
+</html>
