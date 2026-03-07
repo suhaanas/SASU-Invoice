@@ -6,53 +6,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
     <!-- SEO & Meta Tags -->
-    <title>SASU Invoice – Invoice Generator</title>
+    <title>Invoice Editor | SASU Invoice</title>
     <meta name="description"
-        content="Create, preview, and export professional invoices instantly using the SASU Invoice web application. Free and easy to use." />
-    <meta name="keywords" content="invoice generator app, online invoice tool, billing app, PDF invoice maker" />
-    <!-- TODO: Replace yourdomain.com with your actual domain when deploying -->
-    <link rel="canonical" href="https://yourdomain.com/app.html" />
+        content="Create, edit, and export your professional invoice here. Live preview, automated calculations, and one-click PDF/PNG exports. Free and secure." />
+    <meta name="keywords"
+        content="invoice maker, bill generator, PDF invoice creator, free invoice templates, billing app, invoice software" />
+    <meta name="author" content="Suha Anas" />
+    <link rel="canonical" href="https://sasuinvoice.netlify.app/app.html" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://yourdomain.com/app.html" />
-    <meta property="og:title" content="SASU Invoice – Free Invoice Generator App" />
+    <meta property="og:url" content="https://sasuinvoice.netlify.app/app.html" />
+    <meta property="og:title" content="Invoice Editor | SASU Invoice" />
     <meta property="og:description"
-        content="Create, preview, and export professional invoices instantly using the SASU Invoice web application." />
-    <!-- TODO: Update with actual OG Image URL -->
-    <meta property="og:image" content="https://yourdomain.com/images/og-image.jpg" />
+        content="Create, edit, and export your professional invoice here. Live preview, automated calculations, and one-click PDF/PNG exports." />
+    <meta property="og:image" content="https://sasuinvoice.netlify.app/images/og-image.jpg" />
 
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://yourdomain.com/app.html" />
-    <meta property="twitter:title" content="SASU Invoice – Free Invoice Generator App" />
-    <meta property="twitter:description"
-        content="Create, preview, and export professional invoices instantly using the SASU Invoice web application." />
-    <!-- TODO: Update with actual OG Image URL -->
-    <meta property="twitter:image" content="https://yourdomain.com/images/og-image.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://sasuinvoice.netlify.app/app.html" />
+    <meta name="twitter:title" content="Invoice Editor | SASU Invoice" />
+    <meta name="twitter:description"
+        content="Create, edit, and export your professional invoice here. Live preview, automated calculations, and one-click PDF/PNG exports." />
+    <meta name="twitter:image" content="https://sasuinvoice.netlify.app/images/og-image.jpg" />
 
     <!-- JSON-LD Schema Markup -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      "name": "SASU Invoice Generator",
+      "name": "SASU Invoice Editor",
       "applicationCategory": "BusinessApplication",
       "operatingSystem": "Web",
+      "browserRequirements": "Requires JavaScript. Works on Safari, Chrome, Edge, and Firefox.",
       "offers": {
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "USD"
       },
-      "description": "Create, preview, and export professional invoices instantly. No sign-up required.",
-      "url": "https://yourdomain.com/app.html"
+      "description": "Browser-based invoice editor with live preview, AI features, and PDF/PNG export capability.",
+      "url": "https://sasuinvoice.netlify.app/app.html"
     }
     </script>
+
+    <!-- Core Web Vitals Optimization -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="preload" as="style"
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Space+Grotesk:wght@400;500;00;700&display=swap" />
     <link
-        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Space+Grotesk:wght@400;500;600;700&display=swap"
         rel="stylesheet" />
+
+    <!-- Dependencies with Preload Options -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+        as="script" />
+    <link rel="preload" href="css/app.css" as="style" />
     <link rel="stylesheet" href="css/app.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>

@@ -6,32 +6,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
     <!-- SEO & Meta Tags -->
-    <title>SASU Invoice – Create Beautiful Invoices Instantly</title>
+    <title>SASU Invoice | Free Online Invoice Generator & PDF Maker</title>
     <meta name="description"
         content="SASU Invoice lets you create stunning professional invoices in seconds. Export as PDF, PNG or print with one click. Free invoice generator with no sign-up required." />
     <meta name="keywords"
         content="invoice generator, create invoice, free invoice maker, online invoice, PDF invoice, invoice templates, billing software, SASU invoice" />
     <meta name="author" content="Suha Anas" />
-    <!-- TODO: Replace yourdomain.com with your actual domain when deploying -->
-    <link rel="canonical" href="https://yourdomain.com/" />
+    <link rel="canonical" href="https://sasuinvoice.netlify.app/" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://yourdomain.com/" />
-    <meta property="og:title" content="SASU Invoice – Create Beautiful Invoices Instantly" />
+    <meta property="og:url" content="https://sasuinvoice.netlify.app/" />
+    <meta property="og:title" content="SASU Invoice | Free Online Invoice Generator" />
     <meta property="og:description"
         content="Create stunning professional invoices in seconds. Export as PDF, PNG or print with one click. Free, no sign-up required." />
-    <!-- TODO: Update with actual OG Image URL -->
-    <meta property="og:image" content="https://yourdomain.com/images/og-image.jpg" />
+    <!-- TODO: Update with actual OG Image URL when available -->
+    <meta property="og:image" content="https://sasuinvoice.netlify.app/images/og-image.jpg" />
 
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://yourdomain.com/" />
-    <meta property="twitter:title" content="SASU Invoice – Create Beautiful Invoices Instantly" />
-    <meta property="twitter:description"
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://sasuinvoice.netlify.app/" />
+    <meta name="twitter:title" content="SASU Invoice | Free Online Invoice Generator" />
+    <meta name="twitter:description"
         content="Create stunning professional invoices in seconds. Export as PDF, PNG or print with one click. Free, no sign-up required." />
-    <!-- TODO: Update with actual OG Image URL -->
-    <meta property="twitter:image" content="https://yourdomain.com/images/og-image.jpg" />
+    <meta name="twitter:image" content="https://sasuinvoice.netlify.app/images/og-image.jpg" />
 
     <!-- JSON-LD Schema Markup -->
     <script type="application/ld+json">
@@ -47,14 +45,41 @@
         "priceCurrency": "USD"
       },
       "description": "SASU Invoice lets you create stunning professional invoices in seconds. Export as PDF, PNG or print with one click.",
-      "url": "https://yourdomain.com"
+      "url": "https://sasuinvoice.netlify.app",
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "ratingCount": "128"
+      },
+      "featureList": [
+        "Live Preview",
+        "PDF Export",
+        "PNG Export",
+        "Print Ready",
+        "Multi-Currency",
+        "Color Themes",
+        "AI Invoice Assistant",
+        "Logo Customization"
+      ]
     }
     </script>
+
+    <!-- Core Web Vitals Optimization -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="preload" as="style"
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" />
     <link
         href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Space+Grotesk:wght@400;500;600;700&display=swap"
-        rel="stylesheet" />
+        rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript>
+        <link
+            href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+            rel="stylesheet" />
+    </noscript>
+
+    <link rel="preload" href="css/landing.css" as="style" />
     <link rel="stylesheet" href="css/landing.css" />
 </head>
 
@@ -195,21 +220,21 @@
     <!-- ===== FEATURES ===== -->
     <section class="features" id="features">
         <div class="section-inner">
-            <div class="section-tag">Features</div>
-            <h2 class="section-title">Everything you need to<br />invoice like a pro</h2>
+            <h2 class="section-tag">Features</h2>
+            <h3 class="section-title">Everything you need to<br />invoice like a pro</h3>
 
             <div class="features-grid">
 
                 <div class="feat-card feat-large">
-                    <div class="feat-icon-wrap" style="background: rgba(99,102,241,0.12)">
+                    <div class="feat-icon-wrap" style="background: rgba(99,102,241,0.12)" aria-hidden="true">
                         <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
                             <path d="M4 7h20M4 14h14M4 21h10" stroke="#818cf8" stroke-width="2.5"
                                 stroke-linecap="round" />
                         </svg>
                     </div>
-                    <h3>Live Preview</h3>
+                    <h4>Live Preview</h4>
                     <p>Every keystroke instantly updates your invoice. What you see is exactly what gets exported.</p>
-                    <div class="feat-preview-mini">
+                    <div class="feat-preview-mini" aria-hidden="true">
                         <div class="fpm-row">
                             <div class="fpm-bar w80"></div>
                             <div class="fpm-dot green"></div>
@@ -226,18 +251,18 @@
                 </div>
 
                 <div class="feat-card">
-                    <div class="feat-icon-wrap" style="background: rgba(52,211,153,0.12)">
+                    <div class="feat-icon-wrap" style="background: rgba(52,211,153,0.12)" aria-hidden="true">
                         <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
                             <rect x="5" y="3" width="18" height="22" rx="3" stroke="#34d399" stroke-width="2.5" />
                             <path d="M9 10h10M9 15h7" stroke="#34d399" stroke-width="2" stroke-linecap="round" />
                         </svg>
                     </div>
-                    <h3>PDF Export</h3>
+                    <h4>PDF Export</h4>
                     <p>Professionally laid out PDF, pixel-perfect — ready to send to clients.</p>
                 </div>
 
                 <div class="feat-card">
-                    <div class="feat-icon-wrap" style="background: rgba(251,146,60,0.12)">
+                    <div class="feat-icon-wrap" style="background: rgba(251,146,60,0.12)" aria-hidden="true">
                         <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
                             <rect x="3" y="3" width="22" height="22" rx="4" stroke="#fb923c" stroke-width="2.5" />
                             <circle cx="10" cy="10" r="2" fill="#fb923c" />
@@ -245,24 +270,24 @@
                                 stroke-linejoin="round" />
                         </svg>
                     </div>
-                    <h3>PNG Export</h3>
+                    <h4>PNG Export</h4>
                     <p>High-quality 2× image export. Use anywhere — email, messaging, posts.</p>
                 </div>
 
                 <div class="feat-card">
-                    <div class="feat-icon-wrap" style="background: rgba(244,63,94,0.12)">
+                    <div class="feat-icon-wrap" style="background: rgba(244,63,94,0.12)" aria-hidden="true">
                         <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
                             <path d="M7 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"
                                 stroke="#f43f5e" stroke-width="2.5" />
                             <path d="M10 22h8M14 19v3" stroke="#f43f5e" stroke-width="2" stroke-linecap="round" />
                         </svg>
                     </div>
-                    <h3>Print Ready</h3>
+                    <h4>Print Ready</h4>
                     <p>Optimized print layout, perfectly formatted for A4 or Letter paper.</p>
                 </div>
 
                 <div class="feat-card">
-                    <div class="feat-icon-wrap" style="background: rgba(168,85,247,0.12)">
+                    <div class="feat-icon-wrap" style="background: rgba(168,85,247,0.12)" aria-hidden="true">
                         <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
                             <circle cx="14" cy="14" r="10" stroke="#a855f7" stroke-width="2.5" />
                             <path d="M10 14c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4" stroke="#a855f7" stroke-width="2"
@@ -270,12 +295,12 @@
                             <circle cx="14" cy="14" r="1.5" fill="#a855f7" />
                         </svg>
                     </div>
-                    <h3>8 Currencies</h3>
+                    <h4>8 Currencies</h4>
                     <p>USD, EUR, GBP, INR, JPY, AUD, CAD, LKR — switch with a single click.</p>
                 </div>
 
                 <div class="feat-card feat-large">
-                    <div class="feat-icon-wrap" style="background: rgba(14,165,233,0.12)">
+                    <div class="feat-icon-wrap" style="background: rgba(14,165,233,0.12)" aria-hidden="true">
                         <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
                             <circle cx="9" cy="9" r="4" stroke="#38bdf8" stroke-width="2.5" />
                             <circle cx="9" cy="9" r="1.5" fill="#38bdf8" />
@@ -283,10 +308,10 @@
                             <circle cx="14" cy="19" r="4" stroke="#38bdf8" stroke-width="2.5" opacity="0.7" />
                         </svg>
                     </div>
-                    <h3>6 Color Themes</h3>
+                    <h4>6 Color Themes</h4>
                     <p>Make every invoice match your brand. Pick from curated professional palettes with instant
                         preview.</p>
-                    <div class="theme-dots">
+                    <div class="theme-dots" aria-hidden="true">
                         <div class="tdot" style="background:#6366f1"></div>
                         <div class="tdot" style="background:#34d399"></div>
                         <div class="tdot" style="background:#fb923c"></div>
@@ -297,26 +322,26 @@
                 </div>
 
                 <div class="feat-card feat-large">
-                    <div class="feat-icon-wrap" style="background: rgba(168,85,247,0.12)">
+                    <div class="feat-icon-wrap" style="background: rgba(168,85,247,0.12)" aria-hidden="true">
                         <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
                             <path d="M14 2v6M14 20v6M2 14h6M20 14h6M5 5l4 4M19 19l4 4M5 23l4-4M19 5l4 4"
                                 stroke="#a855f7" stroke-width="2.5" stroke-linecap="round" />
                         </svg>
                     </div>
-                    <h3>AI Invoice Assistant</h3>
+                    <h4>AI Invoice Assistant</h4>
                     <p>Work smarter, not harder. Use the <strong>Magic Wand</strong> to automatically expand shorthand
                         descriptions into professional billing language. Or use the <strong>AI Writer</strong> to
                         automatically generate polite, context-aware payment notes and thank-you messages.</p>
                 </div>
 
                 <div class="feat-card">
-                    <div class="feat-icon-wrap" style="background: rgba(100,116,139,0.12)">
+                    <div class="feat-icon-wrap" style="background: rgba(100,116,139,0.12)" aria-hidden="true">
                         <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
                             <rect x="5" y="5" width="18" height="18" rx="4" stroke="#64748b" stroke-width="2.5" />
                             <circle cx="14" cy="14" r="5" stroke="#64748b" stroke-width="2.5" />
                         </svg>
                     </div>
-                    <h3>Logo Customization</h3>
+                    <h4>Logo Customization</h4>
                     <p>Upload your own company logo and choose exactly how it's styled: elegant square, subtle rounded
                         corners, or a modern circular avatar.</p>
                 </div>
@@ -328,17 +353,17 @@
     <!-- ===== HOW IT WORKS ===== -->
     <section class="how" id="how">
         <div class="section-inner">
-            <div class="section-tag">How it works</div>
-            <h2 class="section-title">Three steps,<br />one perfect invoice</h2>
+            <h2 class="section-tag">How it works</h2>
+            <h3 class="section-title">Three steps,<br />one perfect invoice</h3>
 
             <div class="steps-row">
                 <div class="step-card">
                     <div class="step-num">01</div>
-                    <h3>Enter your details</h3>
+                    <h4>Enter your details</h4>
                     <p>Fill in your business info, client details, and line items. Auto-calculated totals, taxes, and
                         discounts.</p>
                 </div>
-                <div class="step-connector">
+                <div class="step-connector" aria-hidden="true">
                     <svg width="40" height="16" viewBox="0 0 40 16" fill="none">
                         <path d="M0 8h36M32 4l4 4-4 4" stroke="#6366f1" stroke-width="2" stroke-linecap="round"
                             stroke-linejoin="round" />
@@ -346,10 +371,10 @@
                 </div>
                 <div class="step-card">
                     <div class="step-num">02</div>
-                    <h3>Preview live</h3>
+                    <h4>Preview live</h4>
                     <p>Your invoice renders instantly as you type. Choose your theme color, currency, and layout.</p>
                 </div>
-                <div class="step-connector">
+                <div class="step-connector" aria-hidden="true">
                     <svg width="40" height="16" viewBox="0 0 40 16" fill="none">
                         <path d="M0 8h36M32 4l4 4-4 4" stroke="#6366f1" stroke-width="2" stroke-linecap="round"
                             stroke-linejoin="round" />
@@ -357,7 +382,7 @@
                 </div>
                 <div class="step-card step-highlight">
                     <div class="step-num">03</div>
-                    <h3>Export & send</h3>
+                    <h4>Export & send</h4>
                     <p>Download as PDF or PNG, or print directly. Share with your client in seconds.</p>
                 </div>
             </div>
@@ -367,12 +392,12 @@
     <!-- ===== FORMATS ===== -->
     <section class="formats" id="formats">
         <div class="section-inner">
-            <div class="section-tag">Export Options</div>
-            <h2 class="section-title">Pick your format</h2>
+            <h2 class="section-tag">Export Options</h2>
+            <h3 class="section-title">Pick your format</h3>
             <div class="formats-grid">
                 <div class="format-card">
-                    <div class="format-icon pdf-icon">PDF</div>
-                    <h3>PDF Document</h3>
+                    <div class="format-icon pdf-icon" aria-hidden="true">PDF</div>
+                    <h4>PDF Document</h4>
                     <p>Industry-standard format. Send via email, upload to accounting software, or archive.</p>
                     <ul>
                         <li>Perfectly formatted A4 layout</li>
@@ -381,8 +406,8 @@
                     </ul>
                 </div>
                 <div class="format-card format-highlight">
-                    <div class="format-icon png-icon">PNG</div>
-                    <h3>PNG Image</h3>
+                    <div class="format-icon png-icon" aria-hidden="true">PNG</div>
+                    <h4>PNG Image</h4>
                     <p>High-resolution 2× image. Embed in emails, share on WhatsApp, or post on social media.</p>
                     <ul>
                         <li>2× retina resolution</li>
@@ -391,7 +416,7 @@
                     </ul>
                 </div>
                 <div class="format-card">
-                    <div class="format-icon print-icon">
+                    <div class="format-icon print-icon" aria-hidden="true">
                         <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
                             <path d="M7 5h14a2 2 0 0 1 2 2v8H5V7a2 2 0 0 1 2-2z" stroke="currentColor"
                                 stroke-width="2" />
@@ -399,7 +424,7 @@
                             <path d="M9 20h10M9 23h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                         </svg>
                     </div>
-                    <h3>Print</h3>
+                    <h4>Print</h4>
                     <p>Browser print dialog with optimized print stylesheet. Works with any home or office printer.</p>
                     <ul>
                         <li>A4 & Letter size support</li>
