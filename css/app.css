@@ -1299,7 +1299,8 @@ select {
 
 @media (max-width: 900px) {
     :root {
-        --sheet-scale: 0.75;
+        /* Auto scale to width minus padding */
+        --sheet-scale: min(0.9, calc((100vw - 32px) / 794));
     }
 
     .tb-step span {
@@ -1322,7 +1323,7 @@ select {
 
 @media (max-width: 700px) {
     :root {
-        --sheet-scale: 0.6;
+        --sheet-scale: min(0.8, calc((100vw - 24px) / 794));
     }
 
     .topbar {
@@ -1352,11 +1353,14 @@ select {
 
 @media (max-width: 500px) {
     :root {
-        --sheet-scale: 0.42;
+        /* Hug tighter to the screen boundaries on small phones */
+        --sheet-scale: min(0.95, calc((100vw - 24px) / 794));
     }
 
     .preview-col {
-        min-height: 800px;
+        /* Dynamically adjust height of container based on calculated sheet scale (A4: 1122px tall) plus safe padding for buttons */
+        min-height: calc((1122px * var(--sheet-scale)) + 120px);
+        padding-bottom: 80px;
     }
 
     .topbar {
@@ -1426,7 +1430,7 @@ select {
 
 @media (max-width: 380px) {
     :root {
-        --sheet-scale: 0.35;
+        --sheet-scale: min(0.98, calc((100vw - 16px) / 794));
     }
 }
 
