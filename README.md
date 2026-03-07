@@ -37,6 +37,11 @@ There's no build step required. Just open the files!
 2.  **Open the app:**
     Simply open the `index.html` file in any modern web browser to view the landing page, or open `app.html` to jump straight into the generator tool.
 
+## 👨‍💻 Author & Developer
+
+**Suha Anas**  
+[LinkedIn Profile](https://www.linkedin.com/in/suha-anas/)
+
 ## 🤝 Contributing
 
 Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/suhaAnas/SASU-Invoice/issues).
