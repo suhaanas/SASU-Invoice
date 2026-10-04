@@ -12,7 +12,7 @@ import type { Totals } from '../core/calc';
 import { formatMoney, formatNumber } from '../core/money';
 import { effectiveStatus, type InvoiceState } from '../core/state';
 import { parseISODate } from '../core/dates';
-import { totalRows } from './render';
+import { totalRows } from './sheet';
 
 const PAGE = { w: 595.28, h: 841.89, m: 48 };
 const INK = '#0f172a';

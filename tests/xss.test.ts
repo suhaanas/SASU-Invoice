@@ -5,6 +5,7 @@ import { computeTotals } from '../src/core/calc';
 import { sampleInvoice } from '../src/core/state';
 import { renderPreview, renderSummary } from '../src/ui/render';
 import { renderItems } from '../src/ui/items';
+import { buildSheet } from '../src/ui/sheet';
 
 const PAYLOAD = '"><img src=x onerror="window.__pwned=1"><script>window.__pwned=1</script>';
 
@@ -35,11 +36,24 @@ describe('rendering untrusted input', () => {
     const sheet = document.getElementById('invoicePage')!;
     expect(sheet.querySelector('img[onerror], script')).toBeNull();
     expect(document.getElementById('colDetails')!.querySelector('img[onerror], script')).toBeNull();
-    expect(document.getElementById('invCompanyName')!.textContent).toBe(PAYLOAD);
+    expect(sheet.querySelector('.inv-company')!.textContent).toBe(PAYLOAD);
     expect(sheet.querySelector('td.tc-desc')!.textContent).toBe(PAYLOAD);
     const descInput = document.querySelector<HTMLInputElement>('.ir-desc')!;
     expect(descInput.value).toBe(PAYLOAD);
     expect(descInput.outerHTML).not.toContain('onerror="window');
     expect((window as unknown as { __pwned?: number }).__pwned).toBeUndefined();
+  });
+
+  it('buildSheet (used by the landing page) never parses markup', () => {
+    const s = sampleInvoice();
+    s.business.name = PAYLOAD;
+    s.client.company = PAYLOAD;
+    s.business.email = PAYLOAD;
+    s.meta.poNumber = PAYLOAD.slice(0, 60);
+    s.items[0]!.desc = PAYLOAD;
+    const sheet = buildSheet(s, computeTotals(s));
+    expect(sheet.querySelector('img, script')).toBeNull();
+    expect(sheet.querySelector('.inv-company')!.textContent).toBe(PAYLOAD);
+    expect(sheet.querySelectorAll('[data-region]').length).toBeGreaterThanOrEqual(5);
   });
 });

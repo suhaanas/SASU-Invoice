@@ -434,71 +434,7 @@
         <!-- COL 2 – INVOICE PREVIEW -->
         <main class="preview-col" id="colPreview" role="tabpanel" aria-label="Invoice preview">
             <div class="preview-scroll">
-                <article class="inv-sheet" id="invoicePage" aria-label="Invoice preview">
-
-                    <div class="inv-sheet-head">
-                        <div class="inv-from">
-                            <div class="inv-logo-wrap logo-shape-square" id="invLogoWrap" hidden>
-                                <img id="invLogo" alt="Business logo" />
-                            </div>
-                            <div class="inv-from-text">
-                                <p class="inv-company" id="invCompanyName"></p>
-                                <p class="inv-addr" id="invCompanyAddr"></p>
-                                <p class="inv-contact" id="invCompanyContact"></p>
-                                <p class="inv-contact" id="invCompanyTax"></p>
-                            </div>
-                        </div>
-                        <div class="inv-head-meta">
-                            <span class="inv-label-tag">INVOICE</span>
-                            <p class="inv-number" id="invNumber"></p>
-                            <span class="inv-status" id="invStatusBadge"></span>
-                            <table class="inv-meta-table">
-                                <tbody>
-                                    <tr><th scope="row">Issue Date</th><td id="invIssueDate">–</td></tr>
-                                    <tr><th scope="row">Due Date</th><td id="invDueDate">–</td></tr>
-                                    <tr id="invPORow" hidden><th scope="row">PO Number</th><td id="invPO">–</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="inv-rule"></div>
-
-                    <div class="inv-bill-to">
-                        <p class="inv-to-cap">BILL TO</p>
-                        <p class="inv-to-name" id="invClientName"></p>
-                        <p class="inv-to-sub" id="invClientCompany"></p>
-                        <p class="inv-to-sub" id="invClientAddr"></p>
-                        <p class="inv-to-sub" id="invClientContact"></p>
-                        <p class="inv-to-sub" id="invClientTax"></p>
-                    </div>
-
-                    <table class="inv-items-tbl">
-                        <thead>
-                            <tr>
-                                <th class="tc-num" scope="col">#</th>
-                                <th class="tc-desc" scope="col">Description</th>
-                                <th class="tc-r" scope="col">Qty</th>
-                                <th class="tc-r" scope="col">Rate</th>
-                                <th class="tc-r tc-tax" scope="col" id="invTaxHead" hidden>Tax</th>
-                                <th class="tc-r" scope="col">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody id="invTbody"></tbody>
-                    </table>
-
-                    <div class="inv-sheet-foot">
-                        <div class="inv-foot-notes">
-                            <p class="inv-terms" id="invTerms"></p>
-                            <p class="inv-notes-text" id="invNotes"></p>
-                            <div class="inv-bank-box" id="invBank" hidden></div>
-                        </div>
-                        <div class="inv-totals-mini" id="invTotals"></div>
-                    </div>
-
-                    <div class="inv-thankyou" id="invFooter"></div>
-
-                </article>
+                <article class="inv-sheet" id="invoicePage" aria-label="Invoice preview"></article>
             </div>
 
             <div class="mobile-next-action floating">

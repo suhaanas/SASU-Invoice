@@ -6,6 +6,7 @@
 import '@fontsource-variable/dm-sans';
 import '@fontsource/space-grotesk/500.css';
 import '@fontsource/space-grotesk/700.css';
+import './styles/sheet.css';
 import './styles/app.css';
 
 import { computeTotals } from './core/calc';
