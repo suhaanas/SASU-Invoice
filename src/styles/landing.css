@@ -13,8 +13,8 @@
     --indigo: #6366f1;
     --teal: #34d399;
     --radius: 16px;
-    --font: 'DM Sans', sans-serif;
-    --font2: 'Space Grotesk', sans-serif;
+    --font: 'DM Sans Variable', 'DM Sans', system-ui, sans-serif;
+    --font2: 'Space Grotesk', system-ui, sans-serif;
 }
 
 *,
@@ -330,7 +330,7 @@ body {
     overflow: hidden;
     box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
     color: #1e293b;
-    font-family: 'DM Sans', sans-serif;
+    font-family: var(--font);
     text-align: left;
     transform: perspective(1000px) rotateX(4deg);
     transition: transform 0.4s;
@@ -348,7 +348,7 @@ body {
 }
 
 .hcard-company {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: var(--font2);
     font-weight: 700;
     font-size: 15px;
     color: #0f172a;
@@ -373,7 +373,7 @@ body {
 }
 
 .hcard-num {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: var(--font2);
     font-size: 20px;
     font-weight: 700;
     color: #0f172a;
@@ -437,7 +437,7 @@ body {
 }
 
 .hcard-total {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: var(--font2);
     font-size: 20px;
     font-weight: 800;
     color: #6366f1;

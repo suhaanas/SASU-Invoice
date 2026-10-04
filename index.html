@@ -3,7 +3,9 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0a0e1a" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
     <!-- SEO & Meta Tags -->
     <title>SASU Invoice | Free Online Invoice Generator & PDF Maker</title>
@@ -46,41 +48,21 @@
       },
       "description": "SASU Invoice lets you create stunning professional invoices in seconds. Export as PDF, PNG or print with one click.",
       "url": "https://sasuinvoice.netlify.app",
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.9",
-        "ratingCount": "128"
-      },
       "featureList": [
         "Live Preview",
         "PDF Export",
         "PNG Export",
         "Print Ready",
         "Multi-Currency",
+        "Autosave and Saved Invoices",
         "Color Themes",
-        "AI Invoice Assistant",
+        "Smart Suggestions",
         "Logo Customization"
       ]
     }
     </script>
 
-    <!-- Core Web Vitals Optimization -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-    <link rel="preload" as="style"
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Space+Grotesk:wght@400;500;600;700&display=swap"
-        rel="stylesheet" media="print" onload="this.media='all'" />
-    <noscript>
-        <link
-            href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Space+Grotesk:wght@400;500;600;700&display=swap"
-            rel="stylesheet" />
-    </noscript>
-
-    <link rel="preload" href="css/landing.css" as="style" />
-    <link rel="stylesheet" href="css/landing.css" />
+    <script type="module" src="/src/main-landing.ts"></script>
 </head>
 
 <body>
@@ -103,7 +85,7 @@
                 <li><a href="#how">How it works</a></li>
                 <li><a href="#formats">Formats</a></li>
             </ul>
-            <a href="app.html" class="nav-cta">Open App →</a>
+            <a href="/app.html" class="nav-cta">Open App →</a>
         </div>
     </nav>
 
@@ -127,7 +109,7 @@
                 then export as PDF, PNG, or print — all in one place.
             </p>
             <div class="hero-actions">
-                <a href="app.html" class="btn-hero-primary">
+                <a href="/app.html" class="btn-hero-primary">
                     Create Invoice
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -196,18 +178,18 @@
             </div>
             <div class="stat-sep"></div>
             <div class="stat-item">
-                <div class="stat-num">8</div>
+                <div class="stat-num">13</div>
                 <div class="stat-label">currency options</div>
             </div>
             <div class="stat-sep"></div>
             <div class="stat-item">
-                <div class="stat-num">6</div>
+                <div class="stat-num">8+</div>
                 <div class="stat-label">color themes</div>
             </div>
             <div class="stat-sep"></div>
             <div class="stat-item">
-                <div class="stat-num">2</div>
-                <div class="stat-label">AI tools built-in</div>
+                <div class="stat-num">0</div>
+                <div class="stat-label">sign-ups or servers</div>
             </div>
             <div class="stat-sep"></div>
             <div class="stat-item">
@@ -258,7 +240,7 @@
                         </svg>
                     </div>
                     <h4>PDF Export</h4>
-                    <p>Professionally laid out PDF, pixel-perfect — ready to send to clients.</p>
+                    <p>True vector PDF with selectable, searchable text. Long invoices flow onto extra pages automatically.</p>
                 </div>
 
                 <div class="feat-card">
@@ -283,7 +265,7 @@
                         </svg>
                     </div>
                     <h4>Print Ready</h4>
-                    <p>Optimized print layout, perfectly formatted for A4 or Letter paper.</p>
+                    <p>Optimized print layout: only the invoice prints, cleanly formatted for A4.</p>
                 </div>
 
                 <div class="feat-card">
@@ -295,8 +277,8 @@
                             <circle cx="14" cy="14" r="1.5" fill="#a855f7" />
                         </svg>
                     </div>
-                    <h4>8 Currencies</h4>
-                    <p>USD, EUR, GBP, INR, JPY, AUD, CAD, LKR — switch with a single click.</p>
+                    <h4>13 Currencies</h4>
+                    <p>USD, EUR, GBP, INR, JPY, AUD, CAD, LKR, CHF, SGD, AED, NZD, ZAR, with the right decimals and number format for each.</p>
                 </div>
 
                 <div class="feat-card feat-large">
@@ -308,8 +290,8 @@
                             <circle cx="14" cy="19" r="4" stroke="#38bdf8" stroke-width="2.5" opacity="0.7" />
                         </svg>
                     </div>
-                    <h4>6 Color Themes</h4>
-                    <p>Make every invoice match your brand. Pick from curated professional palettes with instant
+                    <h4>Color Themes</h4>
+                    <p>Make every invoice match your brand. Pick a curated palette or any custom colour, with instant
                         preview.</p>
                     <div class="theme-dots" aria-hidden="true">
                         <div class="tdot" style="background:#6366f1"></div>
@@ -328,10 +310,10 @@
                                 stroke="#a855f7" stroke-width="2.5" stroke-linecap="round" />
                         </svg>
                     </div>
-                    <h4>AI Invoice Assistant</h4>
-                    <p>Work smarter, not harder. Use the <strong>Magic Wand</strong> to automatically expand shorthand
-                        descriptions into professional billing language. Or use the <strong>AI Writer</strong> to
-                        automatically generate polite, context-aware payment notes and thank-you messages.</p>
+                    <h4>Smart Suggestions</h4>
+                    <p>Type shorthand like “logo” or “seo audit” and press <strong>Suggest</strong> to get professional
+                        billing language from a built-in phrase library. Add friendly, formal or reminder payment notes
+                        in one click. It all runs offline, so nothing you type is sent anywhere.</p>
                 </div>
 
                 <div class="feat-card">
@@ -443,7 +425,7 @@
             <div class="section-tag light-tag">Ready?</div>
             <h2 class="cta-title">Start creating your invoice now</h2>
             <p class="cta-sub">No account. No credit card. No limits.<br />Just open the app and go.</p>
-            <a href="app.html" class="btn-hero-primary btn-cta">
+            <a href="/app.html" class="btn-hero-primary btn-cta">
                 Create Invoice — It's Free
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -475,23 +457,6 @@
             </p>
         </div>
     </footer>
-
-    <script>
-        // Smooth scroll
-        document.querySelectorAll('a[href^="#"]').forEach(a => {
-            a.addEventListener('click', e => {
-                const id = a.getAttribute('href').slice(1);
-                const el = document.getElementById(id);
-                if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth' }); }
-            });
-        });
-
-        // Nav scroll effect
-        const nav = document.querySelector('.nav');
-        window.addEventListener('scroll', () => {
-            nav.classList.toggle('nav-scrolled', window.scrollY > 40);
-        });
-    </script>
 </body>
 
 </html>
