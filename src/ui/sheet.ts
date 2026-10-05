@@ -26,7 +26,7 @@ export function totalRows(state: InvoiceState, t: Totals): TotalRow[] {
     rows.push({ label: `Discount${pct}`, value: `−${m(t.discount)}`, kind: 'discount' });
   }
   const taxLabel = state.totals.taxLabel.trim() || 'Tax';
-  for (const tx of t.taxes) {
+  for (const tx of t.taxes.filter((x) => x.amountMinor !== 0)) {
     rows.push({ label: `${taxLabel} (${formatNumber(tx.rate, locale, 3)}%)`, value: m(tx.amountMinor) });
   }
   if (t.shipping > 0) rows.push({ label: 'Shipping', value: m(t.shipping) });

@@ -6,7 +6,16 @@
 import { z } from 'zod';
 import { CURRENCY_CODES, LOCALE_CODES } from './money';
 import { DUE_TERM_IDS } from './dates';
-import { DISCOUNT_TYPES, LOGO_SHAPES, STATUSES, type InvoiceState } from './state';
+import {
+  DISCOUNT_TYPES,
+  DOC_TYPES,
+  LOGO_SHAPES,
+  OPERATION_CATEGORIES,
+  PAYMENT_METHODS,
+  STATUSES,
+  VAT_CATEGORY_CODES,
+  type InvoiceState,
+} from './state';
 
 // Our CSP forbids eval; skip zod's JIT (and its `new Function` probe, which
 // would otherwise log a CSP violation on every page load).
@@ -38,6 +47,7 @@ export const lineItemSchema = z.object({
   unit: text(20),
   rate: money,
   taxRate: percent.nullable(),
+  vatCategory: z.enum(VAT_CATEGORY_CODES).default('S'),
 });
 
 export const businessSchema = z.object({
@@ -47,6 +57,9 @@ export const businessSchema = z.object({
   phone: text(),
   website: text(),
   taxId: text(),
+  legal: z
+    .object({ form: text(80), capital: text(80), regNumber: text(80), regPlace: text(80) })
+    .default({ form: '', capital: '', regNumber: '', regPlace: '' }),
 });
 
 export const clientSchema = z.object({
@@ -56,11 +69,31 @@ export const clientSchema = z.object({
   email: text(),
   phone: text(),
   taxId: text(),
+  regNumber: text(80).default(''),
+  deliveryAddress: text(MAX_LONG_TEXT).default(''),
 });
 
+export const paymentSchema = z.object({
+  method: z.enum(PAYMENT_METHODS),
+  beneficiary: text(70),
+  iban: text(42),
+  bic: text(11),
+  upiId: text(80),
+  link: text(500),
+});
+
+const BLANK_PAYMENT = { method: 'none', beneficiary: '', iban: '', bic: '', upiId: '', link: '' } as const;
+
+/**
+ * Invoice schema (v2). It also accepts v1 documents written by earlier
+ * versions: every field added in v2 has a default, and `version` is upgraded
+ * to 2 on parse, so old localStorage data and backups migrate transparently.
+ */
 export const invoiceSchema = z.object({
-  version: z.literal(1),
+  version: z.union([z.literal(1), z.literal(2)]).transform(() => 2 as const),
   id: z.string().min(1).max(64),
+  docType: z.enum(DOC_TYPES).default('invoice'),
+  ref: z.object({ number: text(64), date: isoDate }).nullable().default(null),
   business: businessSchema,
   client: clientSchema,
   meta: z.object({
@@ -72,6 +105,11 @@ export const invoiceSchema = z.object({
     dueDate: isoDate,
     poNumber: text(64),
     status: z.enum(STATUSES),
+    supplyDate: isoDate.default(''),
+    supplySameAsIssue: z.boolean().default(true),
+    validUntil: isoDate.default(''),
+    operation: z.enum(OPERATION_CATEGORIES).default(''),
+    issuedAt: z.number().int().nonnegative().nullable().default(null),
   }),
   items: z.array(lineItemSchema).max(MAX_ITEMS),
   totals: z.object({
@@ -87,7 +125,9 @@ export const invoiceSchema = z.object({
     notes: text(MAX_LONG_TEXT),
     bankDetails: text(MAX_LONG_TEXT),
     footer: text(MAX_LONG_TEXT),
+    legalMentions: z.array(text(40)).max(20).default([]),
   }),
+  payment: paymentSchema.default({ ...BLANK_PAYMENT }),
   style: z.object({
     accent: z.string().regex(/^#[0-9a-fA-F]{6}$/),
     logoShape: z.enum(LOGO_SHAPES),
@@ -108,7 +148,20 @@ export const profileSchema = z.object({
   footer: text(MAX_LONG_TEXT),
   taxLabel: text(30),
   taxRate: percent,
+  legalMentions: z.array(text(40)).max(20).default([]),
+  payment: paymentSchema.default({ ...BLANK_PAYMENT }),
 });
+
+export const catalogItemSchema = z.object({
+  id: z.string().min(1).max(64),
+  desc: text(MAX_LONG_TEXT),
+  unit: text(20),
+  rate: money,
+  taxRate: percent.nullable(),
+  vatCategory: z.enum(VAT_CATEGORY_CODES).default('S'),
+});
+
+export type CatalogItem = z.infer<typeof catalogItemSchema>;
 
 export type Profile = z.infer<typeof profileSchema>;
 
@@ -118,6 +171,7 @@ export const backupSchema = z.object({
   exportedAt: z.string().max(40),
   invoices: z.array(invoiceSchema).max(10_000),
   profile: profileSchema.nullable(),
+  catalog: z.array(catalogItemSchema).max(2000).default([]),
 });
 
 export type Backup = z.infer<typeof backupSchema>;

@@ -13,10 +13,19 @@ describe('state helpers', () => {
 
   it('marks unpaid invoices past due as overdue, never paid ones', () => {
     const s = createInvoice();
+    s.meta.status = 'Unpaid';
     s.meta.dueDate = '2026-01-01';
     expect(effectiveStatus(s, '2026-01-02')).toBe('Overdue');
     expect(effectiveStatus(s, '2026-01-01')).toBe('Unpaid');
     s.meta.status = 'Paid';
     expect(effectiveStatus(s, '2026-06-01')).toBe('Paid');
+  });
+
+  it('expires sent quotes after their validity date', () => {
+    const q = createInvoice({ docType: 'quote' });
+    q.meta.status = 'Sent';
+    q.meta.validUntil = '2026-01-10';
+    expect(effectiveStatus(q, '2026-01-11')).toBe('Expired');
+    expect(effectiveStatus(q, '2026-01-10')).toBe('Sent');
   });
 });

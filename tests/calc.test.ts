@@ -37,9 +37,9 @@ describe('computeTotals', () => {
       inv([{ qty: 1, rate: 100, taxRate: 20 }, { qty: 1, rate: 100, taxRate: 5.5 }, { qty: 1, rate: 100 }], { taxRate: 10 }),
     );
     expect(t.taxes).toEqual([
-      { rate: 20, amountMinor: 2000 },
-      { rate: 10, amountMinor: 1000 },
-      { rate: 5.5, amountMinor: 550 },
+      { category: 'S', rate: 20, baseMinor: 10000, amountMinor: 2000 },
+      { category: 'S', rate: 10, baseMinor: 10000, amountMinor: 1000 },
+      { category: 'S', rate: 5.5, baseMinor: 10000, amountMinor: 550 },
     ]);
     expect(t.tax).toBe(3550);
   });
@@ -68,5 +68,17 @@ describe('computeTotals', () => {
     const t = computeTotals(inv([{ qty: 3, rate: 333.5 }, { qty: -1, rate: 100 }, { qty: Number.NaN, rate: 5 }], {}, 'JPY'));
     expect(t.lines[0]!.rateMinor).toBe(334);
     expect(t.subtotal).toBe(1002);
+  });
+
+  it('forces 0% for exempt / reverse-charge lines but keeps them in the breakdown', () => {
+    const t = computeTotals(
+      inv([{ qty: 1, rate: 100 }, { qty: 2, rate: 50, vatCategory: 'AE', taxRate: 20 }, { qty: 1, rate: 40, vatCategory: 'E' }], { taxRate: 20 }),
+    );
+    expect(t.tax).toBe(2000);
+    expect(t.taxes).toEqual([
+      { category: 'S', rate: 20, baseMinor: 10000, amountMinor: 2000 },
+      { category: 'AE', rate: 0, baseMinor: 10000, amountMinor: 0 },
+      { category: 'E', rate: 0, baseMinor: 4000, amountMinor: 0 },
+    ]);
   });
 });

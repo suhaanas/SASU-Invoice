@@ -3,13 +3,22 @@
  * every access is wrapped because storage can be disabled, full, or throw in
  * private windows. Nothing ever leaves the browser.
  */
-import { invoiceSchema, profileSchema, type Profile } from './validate';
+import {
+  catalogItemSchema,
+  invoiceSchema,
+  profileSchema,
+  type CatalogItem,
+  type Profile,
+} from './validate';
 import type { Client, InvoiceState } from './state';
 
 const KEYS = {
   invoices: 'sasu:v3:invoices',
   current: 'sasu:v3:current',
   profile: 'sasu:v3:profile',
+  catalog: 'sasu:v3:catalog',
+  quarantine: 'sasu:v3:quarantine',
+  lastBackup: 'sasu:v3:lastBackupAt',
 } as const;
 
 function read(key: string): unknown {
@@ -30,15 +39,54 @@ function write(key: string, value: unknown): boolean {
   }
 }
 
+/**
+ * Load saved invoices. Older (v1) records are migrated by the schema. Records
+ * that fail validation are moved to a quarantine key rather than deleted, so a
+ * bug or a bad edit never silently destroys someone's invoice.
+ */
 export function loadInvoices(): InvoiceState[] {
   const data = read(KEYS.invoices);
   if (!Array.isArray(data)) return [];
   const out: InvoiceState[] = [];
+  const rejected: unknown[] = [];
   for (const entry of data) {
     const r = invoiceSchema.safeParse(entry);
     if (r.success) out.push(r.data);
+    else rejected.push(entry);
+  }
+  if (rejected.length > 0) {
+    const prior = read(KEYS.quarantine);
+    write(KEYS.quarantine, [...(Array.isArray(prior) ? prior : []), ...rejected].slice(-200));
+    write(KEYS.invoices, out);
   }
   return out;
+}
+
+export function quarantineCount(): number {
+  const q = read(KEYS.quarantine);
+  return Array.isArray(q) ? q.length : 0;
+}
+
+export function loadCatalog(): CatalogItem[] {
+  const data = read(KEYS.catalog);
+  if (!Array.isArray(data)) return [];
+  return data.flatMap((d) => {
+    const r = catalogItemSchema.safeParse(d);
+    return r.success ? [r.data] : [];
+  });
+}
+
+export function saveCatalog(items: CatalogItem[]): boolean {
+  return write(KEYS.catalog, items);
+}
+
+export function loadLastBackup(): number | null {
+  const v = read(KEYS.lastBackup);
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
+export function saveLastBackup(at: number): void {
+  write(KEYS.lastBackup, at);
 }
 
 export function saveInvoices(list: InvoiceState[]): boolean {
@@ -84,6 +132,8 @@ export function profileFromInvoice(inv: InvoiceState): Profile {
     footer: inv.notes.footer,
     taxLabel: inv.totals.taxLabel,
     taxRate: inv.totals.taxRate,
+    legalMentions: inv.notes.legalMentions,
+    payment: inv.payment,
   };
 }
 
@@ -99,7 +149,9 @@ export function applyProfile(inv: InvoiceState, p: Profile): InvoiceState {
       paymentTerms: p.paymentTerms,
       bankDetails: p.bankDetails,
       footer: p.footer,
+      legalMentions: [...p.legalMentions],
     },
+    payment: { ...p.payment },
     style: { accent: p.accent, logoShape: p.logoShape, logo: p.logo },
   };
 }

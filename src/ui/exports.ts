@@ -4,7 +4,7 @@
  */
 import { computeTotals } from '../core/calc';
 import type { InvoiceState } from '../core/state';
-import { backupSchema, MAX_IMPORT_BYTES, type Backup, type Profile } from '../core/validate';
+import { backupSchema, MAX_IMPORT_BYTES, type Backup, type CatalogItem, type Profile } from '../core/validate';
 import { byId, downloadBlob, safeFileName } from './dom';
 import { showToast } from './toast';
 
@@ -64,12 +64,17 @@ export function exportPrint(): void {
   window.print();
 }
 
-export function downloadBackup(invoices: InvoiceState[], profile: Profile | null): void {
+export function downloadBackup(
+  invoices: InvoiceState[],
+  profile: Profile | null,
+  catalog: CatalogItem[],
+): void {
   const backup: Backup = {
     app: 'sasu-invoice',
     exportedAt: new Date().toISOString(),
     invoices,
     profile,
+    catalog,
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
   const date = new Date().toISOString().slice(0, 10);

@@ -2,7 +2,7 @@
  * Demo invoices for the landing page, built with the same factories the
  * editor uses, so they always validate against the real data model.
  */
-import { blankItem, createInvoice, type InvoiceState } from '../core/state';
+import { blankBusiness, blankClient, blankItem, createInvoice, type InvoiceState } from '../core/state';
 
 export interface DemoLine {
   desc: string;
@@ -23,6 +23,7 @@ export const HERO_CLIENT = 'Northwind Coffee Co.';
 export function heroInvoice(): InvoiceState {
   const inv = createInvoice();
   inv.business = {
+    ...blankBusiness(),
     name: 'Mira Okafor Studio',
     address: '14 Canal Street\nBristol BS1 4RR',
     email: 'hello@miraokafor.studio',
@@ -30,7 +31,7 @@ export function heroInvoice(): InvoiceState {
     website: 'miraokafor.studio',
     taxId: '',
   };
-  inv.client = { name: '', company: '', address: '22 Harbour Road\nBristol BS1 5DB', email: '', phone: '', taxId: '' };
+  inv.client = { ...blankClient(), address: '22 Harbour Road\nBristol BS1 5DB' };
   inv.meta = {
     ...inv.meta,
     number: 'INV-0042',
@@ -48,6 +49,7 @@ export function heroInvoice(): InvoiceState {
     notes: 'Thanks for a lovely project.',
     bankDetails: '',
     footer: '',
+    legalMentions: [],
   };
   return inv;
 }

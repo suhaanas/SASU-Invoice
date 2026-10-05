@@ -36,6 +36,21 @@ export function addDays(iso: string, days: number): string {
   return toISODate(date);
 }
 
+/**
+ * Add calendar months, clamping to the end of shorter months
+ * (Jan 31 + 1 month → Feb 28/29), as billing periods expect.
+ */
+export function addMonths(iso: string, months: number): string {
+  const date = parseISODate(iso);
+  if (!date) return iso;
+  const day = date.getDate();
+  date.setDate(1);
+  date.setMonth(date.getMonth() + months);
+  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  date.setDate(Math.min(day, lastDay));
+  return toISODate(date);
+}
+
 export function formatDate(iso: string, locale: string): string {
   const date = parseISODate(iso);
   if (!date) return '';

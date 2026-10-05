@@ -29,6 +29,7 @@ import {
   applyProfile,
   clearAllData,
   clientBook,
+  loadCatalog,
   loadCurrentId,
   loadInvoices,
   loadProfile,
@@ -438,7 +439,7 @@ byId('invoiceList').addEventListener('click', (e) => {
 
 byId('backupBtn').addEventListener('click', () => {
   persist();
-  downloadBackup(invoices, profile);
+  downloadBackup(invoices, profile, loadCatalog());
   showToast('Backup downloaded');
 });
 

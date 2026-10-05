@@ -5,7 +5,7 @@
  * line rate or invoice rate) → + shipping (untaxed) → total → − paid → balance.
  */
 import { roundHalfUp, toMinor } from './money';
-import type { InvoiceState } from './state';
+import type { InvoiceState, VatCategory } from './state';
 
 export interface LineResult {
   id: string;
@@ -13,12 +13,20 @@ export interface LineResult {
   rateMinor: number;
   amountMinor: number;
   taxRate: number;
+  vatCategory: VatCategory;
 }
 
+/** One row of the VAT breakdown: category, rate, taxable base and tax. */
 export interface TaxLine {
+  category: VatCategory;
   rate: number;
+  /** Net amount (after its share of the discount) taxed at this rate. */
+  baseMinor: number;
   amountMinor: number;
 }
+
+/** Categories that never carry VAT on this invoice (rate is forced to 0). */
+const ZERO_CATEGORIES: ReadonlySet<VatCategory> = new Set(['Z', 'E', 'AE', 'K', 'G', 'O']);
 
 export interface Totals {
   lines: LineResult[];
@@ -49,7 +57,12 @@ export function computeTotals(state: InvoiceState): Totals {
       qty,
       rateMinor,
       amountMinor: roundHalfUp(qty * rateMinor),
-      taxRate: item.taxRate === null ? invoiceTax : clampNonNeg(item.taxRate),
+      taxRate: ZERO_CATEGORIES.has(item.vatCategory)
+        ? 0
+        : item.taxRate === null
+          ? invoiceTax
+          : clampNonNeg(item.taxRate),
+      vatCategory: item.vatCategory,
     };
   });
 
@@ -66,7 +79,7 @@ export function computeTotals(state: InvoiceState): Totals {
 
   // Allocate the discount across lines pro rata so each line is taxed on its
   // net amount; the last non-zero line absorbs the rounding remainder.
-  const taxByRate = new Map<number, number>();
+  const groups = new Map<string, { category: VatCategory; rate: number; base: number; raw: number }>();
   let allocated = 0;
   const lastIdx = lines.findLastIndex((l) => l.amountMinor > 0);
   lines.forEach((l, i) => {
@@ -74,15 +87,20 @@ export function computeTotals(state: InvoiceState): Totals {
     const share =
       i === lastIdx ? discount - allocated : roundHalfUp((discount * l.amountMinor) / subtotal);
     allocated += share;
-    if (l.taxRate === 0) return;
     const net = l.amountMinor - share;
-    taxByRate.set(l.taxRate, (taxByRate.get(l.taxRate) ?? 0) + (net * l.taxRate) / 100);
+    const key = `${l.vatCategory}|${l.taxRate}`;
+    const g = groups.get(key) ?? { category: l.vatCategory, rate: l.taxRate, base: 0, raw: 0 };
+    g.base += net;
+    g.raw += (net * l.taxRate) / 100;
+    groups.set(key, g);
   });
 
-  const taxes: TaxLine[] = [...taxByRate.entries()]
-    .map(([rate, raw]) => ({ rate, amountMinor: roundHalfUp(raw) }))
-    .filter((x) => x.amountMinor !== 0)
-    .sort((a, b) => b.rate - a.rate);
+  // Standard-rate groups at 0% carry no information; everything else (incl.
+  // exempt / reverse-charge bases) is part of a legally complete breakdown.
+  const taxes: TaxLine[] = [...groups.values()]
+    .map((g) => ({ category: g.category, rate: g.rate, baseMinor: g.base, amountMinor: roundHalfUp(g.raw) }))
+    .filter((x) => x.category !== 'S' || x.rate !== 0)
+    .sort((a, b) => b.rate - a.rate || a.category.localeCompare(b.category));
   const tax = taxes.reduce((s, x) => s + x.amountMinor, 0);
 
   const shipping = toMinor(clampNonNeg(t.shipping), cur);
