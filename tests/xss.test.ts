@@ -51,6 +51,11 @@ describe('rendering untrusted input', () => {
     s.business.email = PAYLOAD;
     s.meta.poNumber = PAYLOAD.slice(0, 60);
     s.items[0]!.desc = PAYLOAD;
+    s.business.legal = { form: PAYLOAD, capital: PAYLOAD, regNumber: PAYLOAD, regPlace: PAYLOAD };
+    s.client.deliveryAddress = PAYLOAD;
+    s.client.regNumber = PAYLOAD;
+    s.docType = 'credit';
+    s.ref = { number: PAYLOAD.slice(0, 60), date: '' };
     const sheet = buildSheet(s, computeTotals(s));
     expect(sheet.querySelector('img, script')).toBeNull();
     expect(sheet.querySelector('.inv-company')!.textContent).toBe(PAYLOAD);
