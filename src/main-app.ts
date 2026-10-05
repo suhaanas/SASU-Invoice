@@ -489,7 +489,7 @@ byId('wipeBtn').addEventListener('click', () => {
 // CSS can't divide a length by a length, so fit the A4 sheet to the column here.
 
 const sheet = byId('invoicePage');
-const scroller = sheet.parentElement!;
+const scroller = sheet.closest<HTMLElement>('.preview-scroll')!;
 let zoom: 'fit' | 'actual' = 'fit';
 function fitSheet(): void {
   const avail = scroller.clientWidth - (window.innerWidth <= 700 ? 24 : 80);
@@ -590,7 +590,7 @@ function renderAll(s: InvoiceState): void {
   byId<HTMLInputElement>('f-discount').max = s.totals.discountType === 'percent' ? '100' : '';
   byId('removeLogoBtn').hidden = !s.style.logo;
   renderChrome(s, totals);
-  document.title = `${s.meta.number ? `#${s.meta.number} · ` : ''}Invoice Editor | SASU Invoice`;
+  document.title = `${s.meta.number ? `${s.meta.number} · ` : ''}SASU Invoice`;
 }
 
 store.subscribe((s) => {

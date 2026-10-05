@@ -1222,9 +1222,23 @@ body.is-exporting {
 
 /* ---------- Print: only the invoice ---------- */
 
+/* Zero page margin: browsers print their own header/footer (date, title,
+   URL) inside the page margin, so there must be none. The print frame below
+   recreates a 12mm margin on every page. */
 @page {
     size: A4;
-    margin: 12mm;
+    margin: 0;
+}
+
+.print-frame,
+.print-frame > *,
+.print-frame > * > tr,
+.print-frame > * > tr > td {
+    display: contents;
+}
+
+.print-gap {
+    display: none;
 }
 
 @media print {
@@ -1255,10 +1269,42 @@ body.is-exporting {
         background: #fff !important;
     }
 
+    .print-frame {
+        display: table;
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .print-frame > thead {
+        display: table-header-group;
+    }
+
+    .print-frame > tbody {
+        display: table-row-group;
+    }
+
+    .print-frame > tfoot {
+        display: table-footer-group;
+    }
+
+    .print-frame > * > tr {
+        display: table-row;
+    }
+
+    .print-frame > * > tr > td {
+        display: table-cell;
+        padding: 0;
+    }
+
+    .print-frame > * > tr > .print-gap {
+        display: table-cell;
+        height: 12mm;
+    }
+
     .inv-sheet {
         width: 100%;
         min-height: 0;
-        padding: 0;
+        padding: 0 12mm;
         box-shadow: none;
         transform: none !important;
         margin: 0 !important;

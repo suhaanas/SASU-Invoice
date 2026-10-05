@@ -302,7 +302,16 @@
                 </div>
             </div>
             <div class="preview-scroll">
-                <article class="inv-sheet" id="invoicePage" aria-label="Invoice preview"></article>
+                <!-- Print frame: on screen it's display:contents. In print its repeating
+                     thead/tfoot gap rows give every page a top/bottom margin, so @page can
+                     use margin 0 and the browser has no room for its own header/footer. -->
+                <table class="print-frame" role="presentation">
+                    <thead><tr><td class="print-gap"></td></tr></thead>
+                    <tbody><tr><td class="print-body">
+                        <article class="inv-sheet" id="invoicePage" aria-label="Invoice preview"></article>
+                    </td></tr></tbody>
+                    <tfoot><tr><td class="print-gap"></td></tr></tfoot>
+                </table>
             </div>
             <div class="mobile-next-action">
                 <button type="button" class="btn btn-primary wide" data-goto="colExport">Totals and export</button>
