@@ -18,6 +18,7 @@ import {
   blankItem,
   createInvoice,
   createStore,
+  effectiveStatus,
   nextInvoiceNumber,
   sampleInvoice,
   type DiscountType,
@@ -153,7 +154,7 @@ document.querySelectorAll<HTMLButtonElement>('.sec-header').forEach((btn) => {
 
 // Mobile tabs
 const tabs = document.querySelectorAll<HTMLButtonElement>('.tb-step');
-const MOBILE = window.matchMedia('(max-width: 1200px)');
+const MOBILE = window.matchMedia('(max-width: 1100px)');
 
 function switchTab(targetId: string): void {
   tabs.forEach((t) => {
@@ -337,13 +338,23 @@ byId('clearBtn').addEventListener('click', () => {
 
 const dialog = byId<HTMLDialogElement>('invoicesDialog');
 
+const invoiceSearch = byId<HTMLInputElement>('invoiceSearch');
+
 function renderInvoiceList(): void {
   persist();
-  const sorted = [...invoices].sort((a, b) => b.updatedAt - a.updatedAt);
+  const q = invoiceSearch.value.trim().toLowerCase();
+  const sorted = [...invoices]
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .filter(
+      (inv) =>
+        !q ||
+        [inv.meta.number, inv.client.name, inv.client.company].some((v) => v.toLowerCase().includes(q)),
+    );
   const currentId = store.get().id;
   const list = byId('invoiceList');
   if (sorted.length === 0) {
-    list.replaceChildren(el('li', { class: 'dlg-empty', text: 'No saved invoices yet.' }));
+    const text = q ? 'No invoices match that search.' : 'No saved invoices yet. Your invoices appear here as you work.';
+    list.replaceChildren(el('li', { class: 'dlg-empty', text }));
     return;
   }
   list.replaceChildren(
@@ -371,10 +382,14 @@ function renderInvoiceList(): void {
   );
 }
 
-byId('invoicesBtn').addEventListener('click', () => {
+function openInvoices(): void {
+  invoiceSearch.value = '';
   renderInvoiceList();
   dialog.showModal();
-});
+  invoiceSearch.focus();
+}
+byId('invoicesBtn').addEventListener('click', openInvoices);
+invoiceSearch.addEventListener('input', renderInvoiceList);
 byId('closeInvoicesBtn').addEventListener('click', () => dialog.close());
 dialog.addEventListener('click', (e) => {
   if (e.target === dialog) dialog.close(); // backdrop click
@@ -475,9 +490,10 @@ byId('wipeBtn').addEventListener('click', () => {
 
 const sheet = byId('invoicePage');
 const scroller = sheet.parentElement!;
+let zoom: 'fit' | 'actual' = 'fit';
 function fitSheet(): void {
   const avail = scroller.clientWidth - (window.innerWidth <= 700 ? 24 : 80);
-  const scale = Math.min(1, Math.max(0.2, avail / sheet.offsetWidth));
+  const scale = zoom === 'actual' ? 1 : Math.min(1, Math.max(0.2, avail / sheet.offsetWidth));
   const root = document.documentElement.style;
   root.setProperty('--sheet-scale', String(scale));
   root.setProperty('--sheet-gap', `${sheet.offsetHeight * (scale - 1)}px`);
@@ -485,7 +501,62 @@ function fitSheet(): void {
 new ResizeObserver(fitSheet).observe(scroller);
 new ResizeObserver(fitSheet).observe(sheet);
 
+document.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach((btn) =>
+  btn.addEventListener('click', () => {
+    zoom = btn.dataset.zoom === 'actual' ? 'actual' : 'fit';
+    document
+      .querySelectorAll<HTMLButtonElement>('[data-zoom]')
+      .forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+    byId('colPreview').classList.toggle('zoom-actual', zoom === 'actual');
+    fitSheet();
+  }),
+);
+
+// --- Keyboard shortcuts -------------------------------------------------------
+
+document.addEventListener('keydown', (e) => {
+  const mod = e.metaKey || e.ctrlKey;
+  if (!mod) return;
+  const key = e.key.toLowerCase();
+  if (key === 's' && !e.shiftKey) {
+    e.preventDefault();
+    dirty = true;
+    persist();
+    showToast('Saved in this browser');
+  } else if (key === 'k' && !e.shiftKey) {
+    e.preventDefault();
+    if (dialog.open) dialog.close();
+    else openInvoices();
+  } else if (key === 'e' && e.shiftKey) {
+    e.preventDefault();
+    void exportPDF(store.get());
+  }
+});
+
 // --- Render loop ------------------------------------------------------------
+
+/** Topbar title, status pill and the one-line summaries on each form section. */
+function renderChrome(s: InvoiceState, totals: ReturnType<typeof computeTotals>): void {
+  const status = effectiveStatus(s);
+  byId('docNumber').textContent = `#${s.meta.number || '—'}`;
+  byId('docClient').textContent = s.client.company || s.client.name;
+  const pill = byId('docStatus');
+  pill.textContent = status;
+  pill.className = `pill ${status.toLowerCase()}`;
+
+  const money = formatMoney(totals.total, s.meta.currency, s.meta.locale);
+  const n = s.items.length;
+  const summaries: Record<string, string> = {
+    biz: s.business.name,
+    inv: [s.meta.currency, s.meta.dueDate ? `due ${formatDate(s.meta.dueDate, s.meta.locale)}` : ''].filter(Boolean).join(', '),
+    client: s.client.company || s.client.name || 'Not set',
+    items: `${n} ${n === 1 ? 'item' : 'items'}, ${money}`,
+    notes: s.notes.bankDetails ? 'Includes bank details' : '',
+  };
+  document.querySelectorAll<HTMLElement>('[data-summary]').forEach((node) => {
+    node.textContent = summaries[node.dataset.summary ?? ''] ?? '';
+  });
+}
 
 function renderAll(s: InvoiceState): void {
   const totals = computeTotals(s);
@@ -518,6 +589,7 @@ function renderAll(s: InvoiceState): void {
   byId('discFixedBtn').textContent = symbol;
   byId<HTMLInputElement>('f-discount').max = s.totals.discountType === 'percent' ? '100' : '';
   byId('removeLogoBtn').hidden = !s.style.logo;
+  renderChrome(s, totals);
   document.title = `${s.meta.number ? `#${s.meta.number} · ` : ''}Invoice Editor | SASU Invoice`;
 }
 

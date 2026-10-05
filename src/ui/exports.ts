@@ -11,7 +11,10 @@ import { showToast } from './toast';
 let busy = false;
 
 async function guarded(label: string, fn: () => Promise<void>): Promise<void> {
-  if (busy) return;
+  if (busy) {
+    showToast('Still exporting, one moment…');
+    return;
+  }
   busy = true;
   document.body.classList.add('is-exporting');
   showToast(`Generating ${label}…`);
