@@ -22,7 +22,13 @@ Live: <https://sasuinvoice.netlify.app>
   - **PDF:** true vector output with selectable, searchable text, automatic multi-page tables with repeated headers and page numbers, and an embedded font so ₹ € £ ¥ render correctly.
   - **PNG:** high-resolution (2×) image.
   - **Print:** clean A4 print stylesheet; only the invoice prints.
-- **Backup and restore:** download all invoices as JSON and import them on another device.
+- **Quotes, credit notes, receipts and proformas:** one switch changes the document type, title and number series (INV-, QUO-, CN-, RCT-, PRO-). Quotes convert to invoices in one click; credit notes reference the invoice they correct.
+- **Issue and lock:** issuing assigns the final number (duplicates are blocked) and locks the document, so a sent invoice can't change by accident. Corrections go through a credit note.
+- **Legal details:** supply date, a VAT category per line with an automatic VAT breakdown (rate, taxable base, VAT), company registration details (legal form, capital, registration number, registry), client company number and delivery address, and optional legal wording (French VAT franchise, reverse charge, intra-EU supply, export, French late-payment terms). Verify the wording applies to you; it is not legal advice.
+- **Get paid faster:** a scan-to-pay QR code on the invoice and PDF (SEPA/EPC for euro invoices, UPI for rupee invoices, or your own Stripe/PayPal link); an invoices drawer with Unpaid/Overdue/Paid filters and outstanding totals; one-click reminder emails drafted in your mail app.
+- **Productivity:** saved items catalogue, "Repeat next month" for recurring work, CSV export for your accountant.
+- **Installable offline app:** install from the browser and keep working without a connection.
+- **Backup and restore:** download everything as JSON and import it on another device. A reminder appears if you haven't backed up for 14 days, and the app asks the browser to keep its data.
 - **Styling:** 8 accent colours plus a custom colour picker, and square, rounded or circle logos.
 
 ## Security and privacy
@@ -78,6 +84,13 @@ src/
   main-landing.ts   landing page entry
 tests/       Vitest unit and XSS regression tests
 ```
+
+## What SASU Invoice doesn't do
+
+- It doesn't send invoices. It is not a French approved e-invoicing platform (PA) or a Peppol access point, and it does no e-reporting.
+- It doesn't archive invoices for legal retention. Keep copies of what you send.
+- It doesn't send emails or automatic reminders (reminders open in your own mail app).
+- It can't guarantee legal compliance. Check requirements with your accountant.
 
 ## Known limitations
 

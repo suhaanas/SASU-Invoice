@@ -15,6 +15,12 @@ export default tseslint.config(
         { property: 'innerHTML', message: 'Use textContent / createElement instead.' },
         { property: 'outerHTML', message: 'Use textContent / createElement instead.' },
         { property: 'insertAdjacentHTML', message: 'Use createElement instead.' },
+        // jsPDF APIs behind the 2025–26 advisories (see docs/research-report.md).
+        { property: 'addJS', message: 'jsPDF addJS is banned (script injection advisories).' },
+        { property: 'createAnnotation', message: 'jsPDF createAnnotation is banned (injection advisory).' },
+        { property: 'addSvgAsImage', message: 'jsPDF addSvgAsImage is banned (ReDoS advisory).' },
+        { property: 'AcroForm', message: 'jsPDF AcroForm is banned (injection advisories).' },
+        { property: 'html', message: 'jsPDF html() is banned; build PDFs from state instead.' },
       ],
       'no-restricted-syntax': [
         'error',
