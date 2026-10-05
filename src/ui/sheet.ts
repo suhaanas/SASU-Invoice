@@ -7,7 +7,16 @@
 import type { Totals } from '../core/calc';
 import { formatDate } from '../core/dates';
 import { formatMoney, formatNumber } from '../core/money';
-import { effectiveStatus, type InvoiceState } from '../core/state';
+import { companyLine, legalMentionTexts } from '../core/legal';
+import { paymentQr } from '../core/payment';
+import {
+  DOC_TITLES,
+  VAT_CATEGORIES,
+  effectiveStatus,
+  supplyDate,
+  type InvoiceState,
+} from '../core/state';
+import { qrSvg } from './qr';
 import { el } from './dom';
 
 export interface TotalRow {
@@ -66,13 +75,23 @@ export function buildSheet(state: InvoiceState, totals: Totals): HTMLElement {
       ])
     : null;
 
+  const metaRow = (label: string, value: string) =>
+    el('tr', {}, [el('th', { text: label, attrs: { scope: 'row' } }), el('td', { text: value || '–' })]);
+  const supply = supplyDate(state);
+  const isQuote = state.docType === 'quote';
+  const showDue = state.docType === 'invoice' || state.docType === 'proforma';
   const metaRows = [
-    el('tr', {}, [el('th', { text: 'Issue Date', attrs: { scope: 'row' } }), el('td', { text: formatDate(meta.issueDate, locale) || '–' })]),
-    el('tr', {}, [el('th', { text: 'Due Date', attrs: { scope: 'row' } }), el('td', { text: formatDate(meta.dueDate, locale) || '–' })]),
-    meta.poNumber
-      ? el('tr', {}, [el('th', { text: 'PO Number', attrs: { scope: 'row' } }), el('td', { text: meta.poNumber })])
-      : null,
+    metaRow('Issue date', formatDate(meta.issueDate, locale)),
+    supply !== meta.issueDate ? metaRow('Supply date', formatDate(supply, locale)) : null,
+    showDue ? metaRow('Due date', formatDate(meta.dueDate, locale)) : null,
+    isQuote ? metaRow('Valid until', formatDate(meta.validUntil, locale)) : null,
+    meta.poNumber ? metaRow('PO number', meta.poNumber) : null,
   ];
+  const refText = state.ref?.number
+    ? state.docType === 'credit'
+      ? `Credits invoice #${state.ref.number}${state.ref.date ? ` dated ${formatDate(state.ref.date, locale)}` : ''}`
+      : `Based on quote #${state.ref.number}`
+    : '';
 
   const head = el('div', { class: 'inv-sheet-head' }, [
     el('div', { class: 'inv-from', attrs: { 'data-region': 'from' } }, [
@@ -82,11 +101,13 @@ export function buildSheet(state: InvoiceState, totals: Totals): HTMLElement {
         p('inv-addr', b.address),
         parts('inv-contact', [b.email, b.phone, b.website]),
         p('inv-contact', b.taxId ? `Tax ID: ${b.taxId}` : ''),
+        p('inv-contact', companyLine(state)),
       ]),
     ]),
     el('div', { class: 'inv-head-meta', attrs: { 'data-region': 'meta' } }, [
-      el('span', { class: 'inv-label-tag', text: 'INVOICE' }),
+      el('span', { class: 'inv-label-tag', text: DOC_TITLES[state.docType].toUpperCase() }),
       el('p', { class: 'inv-number', text: `#${meta.number || '—'}` }),
+      p('inv-ref', refText),
       el('span', { class: `inv-status ${status.toLowerCase()}`, text: status }),
       el('table', { class: 'inv-meta-table' }, [el('tbody', {}, metaRows)]),
     ]),
@@ -99,6 +120,13 @@ export function buildSheet(state: InvoiceState, totals: Totals): HTMLElement {
     p('inv-to-sub', c.address),
     parts('inv-to-sub', [c.email, c.phone]),
     p('inv-to-sub', c.taxId ? `Tax ID: ${c.taxId}` : ''),
+    p('inv-to-sub', c.regNumber ? `Company no.: ${c.regNumber}` : ''),
+    c.deliveryAddress.trim()
+      ? el('div', { class: 'inv-deliver' }, [
+          el('p', { class: 'inv-to-cap', text: 'DELIVER TO' }),
+          el('p', { class: 'inv-to-sub', text: c.deliveryAddress }),
+        ])
+      : null,
   ]);
 
   const showTax = state.items.some((i) => i.taxRate !== null);
@@ -149,11 +177,51 @@ export function buildSheet(state: InvoiceState, totals: Totals): HTMLElement {
     ),
   );
 
+  // VAT breakdown: required whenever there are several rates or any
+  // zero-rated / exempt / reverse-charge lines.
+  const catLabel = (code: string) => VAT_CATEGORIES.find((v) => v.code === code)?.label ?? code;
+  const needsBreakdown = totals.taxes.length > 1 || totals.taxes.some((x) => x.category !== 'S');
+  const taxName = state.totals.taxLabel.trim() || 'Tax';
+  const breakdown = needsBreakdown
+    ? el('table', { class: 'inv-vat-tbl' }, [
+        el('caption', { text: `${taxName} breakdown` }),
+        el('thead', {}, [
+          el('tr', {}, [th('Category', ''), th('Rate', 'tc-r'), th('Taxable', 'tc-r'), th(taxName, 'tc-r')]),
+        ]),
+        el(
+          'tbody',
+          {},
+          totals.taxes.map((x) =>
+            el('tr', {}, [
+              el('td', { text: catLabel(x.category) }),
+              el('td', { class: 'tc-r', text: `${formatNumber(x.rate, locale, 3)}%` }),
+              el('td', { class: 'tc-r', text: money(x.baseMinor) }),
+              el('td', { class: 'tc-r', text: money(x.amountMinor) }),
+            ]),
+          ),
+        ),
+      ])
+    : null;
+
+  const qr = paymentQr(state, totals);
+  const payBox =
+    qr && !('error' in qr)
+      ? el('div', { class: 'inv-pay', attrs: { 'data-region': 'pay' } }, [
+          qrSvg(qr.payload, 96, qr.caption),
+          el('div', { class: 'inv-pay-text' }, [
+            el('p', { class: 'inv-pay-cap', text: qr.caption }),
+            el('p', { class: 'inv-pay-detail', text: qr.detail }),
+          ]),
+        ])
+      : null;
+
+  const legal = legalMentionTexts(state);
   const foot = el('div', { class: 'inv-sheet-foot' }, [
     el('div', { class: 'inv-foot-notes', attrs: { 'data-region': 'notes' } }, [
       p('inv-terms', notes.paymentTerms),
       p('inv-notes-text', notes.notes),
       notes.bankDetails.trim() ? el('div', { class: 'inv-bank-box', text: notes.bankDetails }) : null,
+      payBox,
     ]),
     totalsBox,
   ]);
@@ -163,7 +231,11 @@ export function buildSheet(state: InvoiceState, totals: Totals): HTMLElement {
     el('div', { class: 'inv-rule' }),
     billTo,
     table,
+    breakdown,
     foot,
+    legal.length
+      ? el('div', { class: 'inv-legal', attrs: { 'data-region': 'legal' } }, legal.map((t) => el('p', { text: t })))
+      : null,
     p('inv-thankyou', notes.footer),
   ]);
   sheet.style.setProperty('--accent', style.accent);

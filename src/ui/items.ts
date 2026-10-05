@@ -5,7 +5,15 @@
  */
 import { computeTotals, type Totals } from '../core/calc';
 import { formatMoney } from '../core/money';
-import { blankItem, type InvoiceState, type LineItem, type Store } from '../core/state';
+import {
+  VAT_CATEGORIES,
+  VAT_CATEGORY_CODES,
+  blankItem,
+  type InvoiceState,
+  type LineItem,
+  type Store,
+  type VatCategory,
+} from '../core/state';
 import { suggestDescription } from '../core/suggestions';
 import { MAX_ITEMS } from '../core/validate';
 import { byId, el, icon } from './dom';
@@ -21,6 +29,7 @@ const ICONS = {
   down: ['M8 3v10M4 9l4 4 4-4'],
   dup: ['M5 5h8v8H5z', 'M3 11V3h8'],
   del: ['M3 3l10 10M13 3L3 13'],
+  save: ['M4 2.5h8v11l-4-2.6-4 2.6z'],
   wand: ['M8 1v4M8 11v4M1 8h4M11 8h4M3 3l2.5 2.5M10.5 10.5L13 13M3 13l2.5-2.5M10.5 5.5L13 3'],
 };
 
@@ -47,6 +56,15 @@ function numberInput(item: LineItem, field: NumField, label: string, placeholder
   });
   input.value = value === null ? '' : String(value);
   return el('label', { class: 'ic-f' }, [el('span', { text: label }), input]);
+}
+
+function categorySelect(item: LineItem): HTMLElement {
+  const select = el('select', { class: 'ir-cat', attrs: { 'data-field': 'vatCategory' } });
+  select.replaceChildren(
+    ...VAT_CATEGORIES.map((c) => el('option', { text: c.label, attrs: { value: c.code } })),
+  );
+  select.value = item.vatCategory;
+  return el('label', { class: 'ic-f ic-cat' }, [el('span', { text: 'VAT category' }), select]);
 }
 
 function itemRow(item: LineItem, index: number, count: number): HTMLLIElement {
@@ -100,6 +118,7 @@ function itemRow(item: LineItem, index: number, count: number): HTMLLIElement {
       el('label', { class: 'ic-f' }, [el('span', { text: 'Unit' }), unit]),
       numberInput(item, 'rate', 'Rate'),
       numberInput(item, 'taxRate', 'Tax %', '—'),
+      categorySelect(item),
       el('div', { class: 'ic-f ic-amount' }, [
         el('span', { text: 'Amount' }),
         el('output', { class: 'ir-total', attrs: { 'aria-label': `Item ${n} amount` } }),
@@ -109,6 +128,7 @@ function itemRow(item: LineItem, index: number, count: number): HTMLLIElement {
       btn('up', 'Move up', ICONS.up, index === 0),
       btn('down', 'Move down', ICONS.down, index === count - 1),
       btn('dup', 'Duplicate', ICONS.dup),
+      btn('save', 'Save to catalogue', ICONS.save),
       btn('del', 'Delete', ICONS.del),
     ]),
   ]);
@@ -138,18 +158,25 @@ function focusItem(id: string, selector = '.ir-desc'): void {
   row?.querySelector<HTMLElement>(selector)?.focus();
 }
 
-export function bindItems(store: Store<InvoiceState>): void {
+export interface ItemHooks {
+  onSaveToCatalog?: (item: LineItem) => void;
+}
+
+export function bindItems(store: Store<InvoiceState>, hooks: ItemHooks = {}): void {
   const list = byId('itemsContainer');
 
   list.addEventListener('input', (e) => {
     const target = e.target as HTMLInputElement;
-    const field = target.dataset.field as NumField | TextField | undefined;
+    const field = target.dataset.field as NumField | TextField | 'vatCategory' | undefined;
     const id = target.closest<HTMLElement>('.item-card')?.dataset.id;
     if (!field || !id) return;
     store.update((s) => {
       const item = s.items.find((x) => x.id === id);
       if (!item) return;
       if (field === 'desc' || field === 'unit') item[field] = target.value;
+      else if (field === 'vatCategory') {
+        if ((VAT_CATEGORY_CODES as readonly string[]).includes(target.value)) item.vatCategory = target.value as VatCategory;
+      }
       else if (field === 'taxRate') item.taxRate = parseNum(target.value, field);
       else item[field] = parseNum(target.value, field) ?? 0;
     });
@@ -196,6 +223,12 @@ export function bindItems(store: Store<InvoiceState>): void {
       store.update((s) => s.items.splice(idx + 1, 0, copy));
       rerenderItems(store.get());
       focusItem(copy.id);
+      return;
+    }
+
+    if (action === 'save') {
+      const item = store.get().items[idx];
+      if (item) hooks.onSaveToCatalog?.(item);
       return;
     }
 

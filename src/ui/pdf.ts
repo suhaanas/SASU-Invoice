@@ -10,7 +10,10 @@ import interRegularUrl from '../assets/fonts/Inter-400Regular.ttf?url';
 import interBoldUrl from '../assets/fonts/Inter-700Bold.ttf?url';
 import type { Totals } from '../core/calc';
 import { formatMoney, formatNumber } from '../core/money';
-import { effectiveStatus, type InvoiceState } from '../core/state';
+import { companyLine, legalMentionTexts } from '../core/legal';
+import { paymentQr } from '../core/payment';
+import { DOC_TITLES, VAT_CATEGORIES, effectiveStatus, supplyDate, type InvoiceState } from '../core/state';
+import { makeQr } from './qr';
 import { parseISODate } from '../core/dates';
 import { totalRows } from './sheet';
 
@@ -158,12 +161,21 @@ export async function buildPdf(state: InvoiceState, totals: Totals): Promise<Blo
   const contact = wrapParts([b.email, b.phone, b.website], 9, leftW);
   if (contact) y = text(contact, PAGE.m, y, { size: 9, color: MUTED, maxW: leftW });
   if (b.taxId) y = text(`Tax ID: ${b.taxId}`, PAGE.m, y, { size: 9, color: MUTED, maxW: leftW });
+  const company = companyLine(state);
+  if (company) y = text(company, PAGE.m, y, { size: 9, color: MUTED, maxW: leftW });
   const leftBottom = y;
 
   // --- Header: meta (right) ----------------------------------------------
   let ry = PAGE.m + 20;
-  ry = text('INVOICE', rightX, ry, { size: 22, bold: true, color: accent, align: 'right' });
+  ry = text(DOC_TITLES[state.docType].toUpperCase(), rightX, ry, { size: 22, bold: true, color: accent, align: 'right' });
   ry = text(`#${meta.number}`, rightX, ry, { size: 11, bold: true, color: '#334155', align: 'right' });
+  if (state.ref?.number) {
+    const refText =
+      state.docType === 'credit'
+        ? `Credits invoice #${state.ref.number}${state.ref.date ? ` dated ${pdfDate(state.ref.date, locale)}` : ''}`
+        : `Based on quote #${state.ref.number}`;
+    ry = text(refText, rightX, ry, { size: 8.5, color: MUTED, align: 'right', maxW: 220 });
+  }
 
   const status = effectiveStatus(state);
   const badgeColors: Record<string, [string, string]> = {
@@ -171,6 +183,12 @@ export async function buildPdf(state: InvoiceState, totals: Totals): Promise<Blo
     Overdue: ['#fee2e2', '#991b1b'],
     Unpaid: ['#f1f5f9', '#475569'],
     Draft: ['#f1f5f9', '#475569'],
+    Cancelled: ['#fee2e2', '#991b1b'],
+    Declined: ['#fee2e2', '#991b1b'],
+    Expired: ['#fee2e2', '#991b1b'],
+    Sent: ['#e0e7ff', '#3730a3'],
+    Issued: ['#e0e7ff', '#3730a3'],
+    Accepted: ['#dcfce7', '#166534'],
   };
   const [bg, fg] = badgeColors[status] ?? ['#f1f5f9', '#475569'];
   doc.setFont('Inter', 'bold');
@@ -181,11 +199,12 @@ export async function buildPdf(state: InvoiceState, totals: Totals): Promise<Blo
   text(status.toUpperCase(), rightX - 7, ry + 7, { size: 8, bold: true, color: fg, align: 'right' });
   ry += 26;
 
-  const metaRows: [string, string][] = [
-    ['Issue Date', pdfDate(meta.issueDate, locale)],
-    ['Due Date', pdfDate(meta.dueDate, locale)],
-  ];
-  if (meta.poNumber) metaRows.push(['PO Number', meta.poNumber]);
+  const metaRows: [string, string][] = [['Issue date', pdfDate(meta.issueDate, locale)]];
+  const supply = supplyDate(state);
+  if (supply !== meta.issueDate) metaRows.push(['Supply date', pdfDate(supply, locale)]);
+  if (state.docType === 'invoice' || state.docType === 'proforma') metaRows.push(['Due date', pdfDate(meta.dueDate, locale)]);
+  if (state.docType === 'quote') metaRows.push(['Valid until', pdfDate(meta.validUntil, locale)]);
+  if (meta.poNumber) metaRows.push(['PO number', meta.poNumber]);
   for (const [k, v] of metaRows) {
     text(k, rightX - 170, ry, { size: 9, color: MUTED });
     text(v, rightX, ry, { size: 9, bold: true, align: 'right' });
@@ -201,8 +220,18 @@ export async function buildPdf(state: InvoiceState, totals: Totals): Promise<Blo
   // --- Bill to -----------------------------------------------------------
   y = text('BILL TO', PAGE.m, y, { size: 8, bold: true, color: FAINT });
   y = text(c.name || 'Client Name', PAGE.m, y + 2, { size: 12, bold: true, maxW: leftW });
-  for (const line of [c.company, c.address, wrapParts([c.email, c.phone], 9, leftW), c.taxId ? `Tax ID: ${c.taxId}` : '']) {
+  for (const line of [
+    c.company,
+    c.address,
+    wrapParts([c.email, c.phone], 9, leftW),
+    c.taxId ? `Tax ID: ${c.taxId}` : '',
+    c.regNumber ? `Company no.: ${c.regNumber}` : '',
+  ]) {
     if (line) y = text(line, PAGE.m, y, { size: 9, color: MUTED, maxW: leftW });
+  }
+  if (c.deliveryAddress.trim()) {
+    y = text('DELIVER TO', PAGE.m, y + 6, { size: 8, bold: true, color: FAINT });
+    y = text(c.deliveryAddress, PAGE.m, y, { size: 9, color: MUTED, maxW: leftW });
   }
   y += 16;
 
@@ -255,6 +284,32 @@ export async function buildPdf(state: InvoiceState, totals: Totals): Promise<Blo
   const docWithTable = doc as jsPDF & { lastAutoTable?: { finalY?: number } };
   y = (docWithTable.lastAutoTable?.finalY ?? y) + 24;
 
+  // --- VAT breakdown (several rates, or exempt / reverse-charge lines) ----
+  if (totals.taxes.length > 1 || totals.taxes.some((x) => x.category !== 'S')) {
+    const taxName = state.totals.taxLabel.trim() || 'Tax';
+    const catLabel = (code: string) => VAT_CATEGORIES.find((v) => v.code === code)?.label ?? code;
+    autoTable(doc, {
+      startY: y - 8,
+      head: [['Category', 'Rate', 'Taxable', taxName]],
+      body: totals.taxes.map((x) => [
+        catLabel(x.category),
+        `${formatNumber(x.rate, locale, 3)}%`,
+        money(x.baseMinor),
+        money(x.amountMinor),
+      ]),
+      theme: 'plain',
+      rowPageBreak: 'avoid',
+      margin: { left: PAGE.w / 2 - 20, right: PAGE.m },
+      styles: { font: 'Inter', fontSize: 8.5, textColor: '#475569', cellPadding: { top: 4, bottom: 4, left: 4, right: 4 } },
+      headStyles: { fontStyle: 'bold', textColor: MUTED, lineWidth: { bottom: 0.75 }, lineColor: LINE },
+      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
+      didParseCell: (data) => {
+        if (data.section === 'head' && data.column.index > 0) data.cell.styles.halign = 'right';
+      },
+    });
+    y = (docWithTable.lastAutoTable?.finalY ?? y) + 22;
+  }
+
   // --- Totals + notes ----------------------------------------------------
   const rows = totalRows(state, totals);
   const totalsW = 220;
@@ -267,6 +322,9 @@ export async function buildPdf(state: InvoiceState, totals: Totals): Promise<Blo
   if (notes.paymentTerms) notesH += measure(notes.paymentTerms, 9, notesW) + 4;
   if (notes.notes) notesH += measure(notes.notes, 9, notesW) + 10;
   if (notes.bankDetails) notesH += measure(notes.bankDetails, 8.5, notesW - 20) + 30;
+  const qr = paymentQr(state, totals);
+  const qrOk = qr && !('error' in qr) ? qr : null;
+  if (qrOk) notesH += 92;
   const totalsH = rows.length * 18 + 30;
   const footerH = notes.footer ? measure(notes.footer, 9, contentW) + 30 : 0;
   const needed = Math.max(notesH, totalsH) + footerH;
@@ -306,9 +364,41 @@ export async function buildPdf(state: InvoiceState, totals: Totals): Promise<Blo
     ny = text(notes.bankDetails, PAGE.m + 10, ny + 16, { size: 8.5, color: '#475569', maxW: notesW - 20 });
   }
 
+  // Payment QR, drawn as vector modules
+  if (qrOk) {
+    const m = makeQr(qrOk.payload);
+    const box = 76;
+    const cell = box / m.size;
+    const qy = ny + 6;
+    doc.setFillColor('#0f172a');
+    for (let r = 0; r < m.size; r++) {
+      for (let c2 = 0; c2 < m.size; c2++) {
+        if (m.isDark(r, c2)) doc.rect(PAGE.m + c2 * cell, qy + r * cell, cell + 0.05, cell + 0.05, 'F');
+      }
+    }
+    text(qrOk.caption, PAGE.m + box + 12, qy + 26, { size: 9, bold: true, maxW: notesW - box - 12 });
+    text(qrOk.detail, PAGE.m + box + 12, qy + 40, { size: 8, color: MUTED, maxW: notesW - box - 12 });
+    ny = qy + box + 8;
+  }
+
+  let endY = Math.max(ny, y + totalsH);
+  const legal = legalMentionTexts(state);
+  if (legal.length) {
+    const lh = legal.reduce((h, t) => h + measure(t, 8, contentW) + 4, 0) + 20;
+    if (endY + lh > PAGE.h - PAGE.m - 20) {
+      doc.addPage();
+      endY = PAGE.m;
+    }
+    let ly = endY + 24;
+    doc.setDrawColor(LINE);
+    doc.setLineWidth(0.5);
+    doc.line(PAGE.m, ly - 12, rightX, ly - 12);
+    for (const t of legal) ly = text(t, PAGE.m, ly, { size: 8, color: MUTED, maxW: contentW }) + 4;
+    endY = ly;
+  }
+
   if (notes.footer) {
-    const fy = Math.max(ny, y + totalsH) + 30;
-    text(notes.footer, PAGE.w / 2, fy, { size: 9, bold: true, color: FAINT, align: 'center', maxW: contentW });
+    text(notes.footer, PAGE.w / 2, endY + 30, { size: 9, bold: true, color: FAINT, align: 'center', maxW: contentW });
   }
 
   // --- Page numbers ------------------------------------------------------

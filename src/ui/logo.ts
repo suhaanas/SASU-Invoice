@@ -52,3 +52,18 @@ export async function processLogo(file: File): Promise<string> {
   if (out.length > MAX_LOGO_CHARS) throw new LogoError('Logo is too detailed; try a smaller image.');
   return out;
 }
+
+/**
+ * Re-validate a logo that arrived as a data URL (e.g. from an imported
+ * backup) through the same checks and re-encoding as an upload.
+ * Returns '' when it fails, so a hostile file never reaches the PDF decoder.
+ */
+export async function recheckLogo(dataUrl: string): Promise<string> {
+  if (!dataUrl) return '';
+  try {
+    const blob = await (await fetch(dataUrl)).blob();
+    return await processLogo(new File([blob], 'logo', { type: blob.type }));
+  } catch {
+    return '';
+  }
+}
