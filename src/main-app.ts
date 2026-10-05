@@ -14,36 +14,48 @@ import { DUE_TERMS, dueDateFor, formatDate } from './core/dates';
 import { CURRENCIES, LOCALES, formatMoney } from './core/money';
 import {
   ACCENTS,
+  DOC_TITLES,
+  ISSUED_STATUS,
+  STATUSES_BY_TYPE,
   blankClient,
   blankItem,
   createInvoice,
   createStore,
   effectiveStatus,
-  nextInvoiceNumber,
+  isLocked,
   sampleInvoice,
   type DiscountType,
+  type DocType,
   type InvoiceState,
   type LogoShape,
 } from './core/state';
+import { LEGAL_MENTIONS, legalWarnings } from './core/legal';
+import { creditNoteFor, duplicateDoc, invoiceFromQuote, repeatNextPeriod } from './core/lifecycle';
+import { SERIES_PREFIX, findDuplicate, nextNumber } from './core/numbering';
+import { paymentQr } from './core/payment';
 import {
   applyProfile,
   clearAllData,
   clientBook,
-  loadCatalog,
   loadCurrentId,
+  loadLastBackup,
   loadInvoices,
   loadProfile,
   profileFromInvoice,
   saveCurrentId,
   saveInvoices,
+  saveLastBackup,
   saveProfile,
 } from './core/storage';
+import { documentsToCsv } from './core/csv';
+import { initCatalog } from './editor/catalog';
+import { initPwa } from './editor/pwa';
 import { NOTE_TONES, suggestNote, type NoteTone } from './core/suggestions';
 import type { Profile } from './core/validate';
-import { byId, el } from './ui/dom';
+import { byId, downloadBlob, el, icon, safeFileName } from './ui/dom';
 import { downloadBackup, exportPDF, exportPNG, exportPrint, readBackup } from './ui/exports';
 import { bindItems, refreshItemTotals, rerenderItems } from './ui/items';
-import { LogoError, processLogo } from './ui/logo';
+import { LogoError, processLogo, recheckLogo } from './ui/logo';
 import { applyAccent, renderPreview, renderSummary } from './ui/render';
 import { showToast } from './ui/toast';
 
@@ -52,10 +64,10 @@ import { showToast } from './ui/toast';
 let invoices = loadInvoices();
 let profile: Profile | null = loadProfile();
 
-function freshInvoice(): InvoiceState {
-  const inv = createInvoice();
-  const latest = [...invoices].sort((a, b) => b.updatedAt - a.updatedAt)[0];
-  if (latest) inv.meta.number = nextInvoiceNumber(latest.meta.number);
+function freshInvoice(type: DocType = 'invoice'): InvoiceState {
+  const inv = createInvoice({ docType: type });
+  inv.meta.number = nextNumber(type, invoices);
+  inv.meta.status = STATUSES_BY_TYPE[type][0]!;
   return profile ? applyProfile(inv, profile) : inv;
 }
 
@@ -90,6 +102,7 @@ function numberLimit(path: string, s: InvoiceState): number {
 }
 
 function readField(input: Bindable, path: string, s: InvoiceState): unknown {
+  if (input instanceof HTMLInputElement && input.type === 'checkbox') return input.checked;
   if (!('num' in input.dataset)) return input.value;
   const n = Number(input.value);
   if (input.value.trim() === '' || !Number.isFinite(n)) return 0;
@@ -100,8 +113,11 @@ function onFieldInput(e: Event): void {
   const input = e.target as Bindable;
   const path = input.dataset?.bind;
   if (!path) return;
+  const before = store.get();
   store.update((s) => {
+    if (path.startsWith('ref.') && !s.ref) s.ref = { number: '', date: '' };
     setPath(s, path, readField(input, path, s));
+    if (path === 'docType') onDocTypeChange(before, s);
     if (path === 'meta.issueDate' || path === 'meta.dueTerm') {
       const due = dueDateFor(s.meta.issueDate, s.meta.dueTerm);
       if (due) s.meta.dueDate = due;
@@ -110,9 +126,27 @@ function onFieldInput(e: Event): void {
   });
 }
 
+/**
+ * Switching document type on a draft: move it to the new number series (if it
+ * was still using the old series' default numbering) and pick a valid status.
+ */
+function onDocTypeChange(before: InvoiceState, s: InvoiceState): void {
+  const allowed = STATUSES_BY_TYPE[s.docType];
+  if (!allowed.includes(s.meta.status)) s.meta.status = allowed[0]!;
+  if (s.meta.issuedAt === null && s.meta.number.startsWith(SERIES_PREFIX[before.docType])) {
+    s.meta.number = nextNumber(s.docType, invoices, s.id);
+  }
+  if (s.docType === 'credit' && !s.ref) s.ref = { number: '', date: '' };
+  if (s.docType === 'quote' && !s.meta.validUntil) s.meta.validUntil = s.meta.dueDate;
+}
+
 function syncForm(s: InvoiceState): void {
   document.querySelectorAll<Bindable>('[data-bind]').forEach((input) => {
     if (input === document.activeElement) return;
+    if (input instanceof HTMLInputElement && input.type === 'checkbox') {
+      input.checked = Boolean(getPath(s, input.dataset.bind!));
+      return;
+    }
     const value = getPath(s, input.dataset.bind!);
     const str = value === null || value === undefined ? '' : String(value);
     if (input.value !== str) input.value = str;
@@ -142,6 +176,25 @@ byId('colorGrid').replaceChildren(
     return b;
   }),
 );
+
+// Legal wording checkboxes
+byId('legalMentions').replaceChildren(
+  ...LEGAL_MENTIONS.map((m) => {
+    const box = el('input', { attrs: { type: 'checkbox', value: m.id, 'data-legal': m.id } });
+    return el('label', { class: 'check' }, [box, el('span', { text: m.label })]);
+  }),
+);
+byId('legalMentions').addEventListener('change', (e) => {
+  const box = e.target as HTMLInputElement;
+  const id = box.dataset.legal;
+  if (!id) return;
+  store.update((s) => {
+    const set = new Set(s.notes.legalMentions);
+    if (box.checked) set.add(id);
+    else set.delete(id);
+    s.notes.legalMentions = LEGAL_MENTIONS.map((m) => m.id).filter((x) => set.has(x));
+  });
+});
 
 // Accordions
 document.querySelectorAll<HTMLButtonElement>('.sec-header').forEach((btn) => {
@@ -181,13 +234,30 @@ document.addEventListener('input', (e) => {
   onFieldInput(e);
 });
 
-bindItems(store);
+const catalog = initCatalog(store);
+bindItems(store, { onSaveToCatalog: (item) => catalog.saveFrom(item) });
 
 // Logo
 const logoInput = byId<HTMLInputElement>('logoInput');
-logoInput.addEventListener('change', async () => {
+const logoDrop = byId('logoDrop');
+logoInput.addEventListener('change', () => {
   const file = logoInput.files?.[0];
-  if (!file) return;
+  if (file) void addLogo(file);
+});
+logoDrop.addEventListener('dragover', (e) => {
+  if (logoInput.disabled) return;
+  e.preventDefault();
+  logoDrop.classList.add('is-dragover');
+});
+logoDrop.addEventListener('dragleave', () => logoDrop.classList.remove('is-dragover'));
+logoDrop.addEventListener('drop', (e) => {
+  e.preventDefault();
+  logoDrop.classList.remove('is-dragover');
+  const file = e.dataTransfer?.files[0];
+  if (file && !logoInput.disabled) void addLogo(file);
+});
+
+async function addLogo(file: File): Promise<void> {
   try {
     const dataUrl = await processLogo(file);
     store.update((s) => (s.style.logo = dataUrl));
@@ -197,7 +267,26 @@ logoInput.addEventListener('change', async () => {
   } finally {
     logoInput.value = '';
   }
-});
+}
+
+/** Thumbnail and label of the logo upload control. */
+function renderLogoField(logo: string): void {
+  const thumb = byId('logoThumb');
+  const img = thumb.querySelector('img');
+  if (logo) {
+    if (img) {
+      if (img.src !== logo) img.src = logo;
+    } else {
+      thumb.replaceChildren(el('img', { attrs: { src: logo, alt: '' } }));
+    }
+  } else if (img) {
+    thumb.replaceChildren(
+      icon(['M5 6.5h0', 'M3.5 13l4-4 3.5 3.5 2-2 3.5 3.5'], 18, '0 0 20 20'),
+    );
+  }
+  byId('logoTitle').textContent = logo ? 'Replace logo' : 'Upload logo';
+  byId('logoSub').textContent = logo ? 'Click or drop a new file' : 'PNG, JPEG or WebP, up to 2 MB. Or drop it here.';
+}
 byId('removeLogoBtn').addEventListener('click', () => store.update((s) => (s.style.logo = '')));
 
 // Theme
@@ -291,6 +380,8 @@ function persist(): void {
   }
   indicator.textContent = ok ? 'Saved' : 'Not saved: browser storage is full or disabled';
   indicator.classList.toggle('error', !ok);
+  if (ok && !persistAsked) void requestPersistence();
+  renderDataPanel();
 }
 
 function scheduleSave(): void {
@@ -309,28 +400,82 @@ document.addEventListener('visibilitychange', () => {
 /** Replace the editor contents with another invoice. */
 function load(inv: InvoiceState): void {
   persist();
+  rerenderItems(inv); // before store.set, so the render pass can apply the lock state
   store.set(inv);
-  rerenderItems(inv);
   saveCurrentId(inv.id);
   renderClientPicker();
   scheduleSave();
 }
 
+// --- Issue & lock -------------------------------------------------------------
+
+function issueCurrent(): void {
+  const s = store.get();
+  if (isLocked(s)) return;
+  const title = DOC_TITLES[s.docType].toLowerCase();
+  let number = s.meta.number.trim();
+  if (!number) number = nextNumber(s.docType, invoices, s.id);
+  const dup = findDuplicate({ ...s, meta: { ...s.meta, number } }, invoices);
+  if (dup) {
+    showToast(`Number ${number} is already used by another ${title}. Change it before issuing.`, 'error');
+    byId('f-number').focus();
+    return;
+  }
+  if (!confirm(`Issue ${title} #${number}? It will be locked so the issued version can't change by accident.`)) return;
+  store.update((d) => {
+    d.meta.number = number;
+    d.meta.issuedAt = Date.now();
+    if (d.meta.status === 'Draft') d.meta.status = ISSUED_STATUS[d.docType];
+  });
+  persist();
+  showToast(`${DOC_TITLES[s.docType]} #${number} issued`);
+}
+
+byId('issueBtn').addEventListener('click', issueCurrent);
+byId('unlockBtn').addEventListener('click', () => {
+  if (
+    !confirm(
+      'Unlock this document for editing? Changing an invoice you already sent can cause problems with your client or accountant. A credit note is usually the right way to correct it.',
+    )
+  ) {
+    return;
+  }
+  store.update((d) => (d.meta.issuedAt = null));
+});
+byId('creditFromLockBtn').addEventListener('click', () => {
+  const s = store.get();
+  persist();
+  load(creditNoteFor(s, invoices));
+  showToast(`Credit note started for #${s.meta.number}`);
+});
+
 // --- Invoice management -----------------------------------------------------
 
 byId('newBtn').addEventListener('click', () => {
   persist();
-  load(freshInvoice());
+  const type = store.get().docType === 'receipt' ? 'invoice' : store.get().docType;
+  load(freshInvoice(type));
   switchTab('colDetails');
-  showToast('New invoice started');
+  showToast(`New ${DOC_TITLES[type].toLowerCase()} started`);
 });
 
 byId('clearBtn').addEventListener('click', () => {
-  if (!confirm('Clear this invoice? Your business details and style are kept.')) return;
   const s = store.get();
-  const blank = createInvoice({ id: s.id, business: s.business, style: s.style });
+  if (isLocked(s)) {
+    showToast('This document is issued and locked. Unlock it or create a credit note.', 'error');
+    return;
+  }
+  if (!confirm('Clear this document? Your business details and style are kept.')) return;
+  const blank = createInvoice({ id: s.id, docType: s.docType, business: s.business, style: s.style, payment: s.payment });
   blank.meta = { ...blank.meta, number: s.meta.number, currency: s.meta.currency, locale: s.meta.locale };
-  blank.notes = { ...blank.notes, paymentTerms: s.notes.paymentTerms, bankDetails: s.notes.bankDetails, footer: s.notes.footer, notes: '' };
+  blank.notes = {
+    ...blank.notes,
+    paymentTerms: s.notes.paymentTerms,
+    bankDetails: s.notes.bankDetails,
+    footer: s.notes.footer,
+    legalMentions: [...s.notes.legalMentions],
+    notes: '',
+  };
   blank.totals = { ...blank.totals, taxLabel: s.totals.taxLabel, taxRate: s.totals.taxRate };
   blank.items = [blankItem()];
   load(blank);
@@ -341,46 +486,128 @@ const dialog = byId<HTMLDialogElement>('invoicesDialog');
 
 const invoiceSearch = byId<HTMLInputElement>('invoiceSearch');
 
+type DrawerFilter = 'all' | 'unpaid' | 'overdue' | 'paid' | 'quotes';
+let drawerFilter: DrawerFilter = 'all';
+
+function matchesFilter(inv: InvoiceState, f: DrawerFilter): boolean {
+  const st = effectiveStatus(inv);
+  if (f === 'all') return true;
+  if (f === 'quotes') return inv.docType === 'quote';
+  if (inv.docType !== 'invoice') return false;
+  if (f === 'unpaid') return st === 'Unpaid' || st === 'Overdue';
+  if (f === 'overdue') return st === 'Overdue';
+  return st === 'Paid';
+}
+
+/** Outstanding balance per currency across unpaid and overdue invoices. */
+function outstandingSummary(): string {
+  const byCurrency = new Map<string, { minor: number; locale: string; count: number; overdue: number }>();
+  for (const inv of invoices) {
+    if (inv.docType !== 'invoice') continue;
+    const st = effectiveStatus(inv);
+    if (st !== 'Unpaid' && st !== 'Overdue') continue;
+    const bal = computeTotals(inv).balance;
+    const e = byCurrency.get(inv.meta.currency) ?? { minor: 0, locale: inv.meta.locale, count: 0, overdue: 0 };
+    e.minor += bal;
+    e.count += 1;
+    if (st === 'Overdue') e.overdue += 1;
+    byCurrency.set(inv.meta.currency, e);
+  }
+  if (byCurrency.size === 0) return 'Nothing outstanding.';
+  const amounts = [...byCurrency.entries()].map(([cur, e]) => formatMoney(e.minor, cur, e.locale));
+  const count = [...byCurrency.values()].reduce((n, e) => n + e.count, 0);
+  const overdue = [...byCurrency.values()].reduce((n, e) => n + e.overdue, 0);
+  return `Outstanding ${amounts.join(' and ')} on ${count} invoice${count === 1 ? '' : 's'}${overdue ? `, ${overdue} overdue` : ''}.`;
+}
+
 function renderInvoiceList(): void {
   persist();
   const q = invoiceSearch.value.trim().toLowerCase();
   const sorted = [...invoices]
     .sort((a, b) => b.updatedAt - a.updatedAt)
+    .filter((inv) => matchesFilter(inv, drawerFilter))
     .filter(
       (inv) =>
         !q ||
         [inv.meta.number, inv.client.name, inv.client.company].some((v) => v.toLowerCase().includes(q)),
     );
+  byId('drawerSummary').textContent = outstandingSummary();
+  document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach((b) =>
+    b.setAttribute('aria-pressed', String(b.dataset.filter === drawerFilter)),
+  );
   const currentId = store.get().id;
   const list = byId('invoiceList');
   if (sorted.length === 0) {
-    const text = q ? 'No invoices match that search.' : 'No saved invoices yet. Your invoices appear here as you work.';
+    const text = q || drawerFilter !== 'all'
+      ? 'No documents match.'
+      : 'No saved documents yet. They appear here as you work.';
     list.replaceChildren(el('li', { class: 'dlg-empty', text }));
     return;
   }
+  const btn = (act: string, label: string, cls = 'mini-btn') =>
+    el('button', { class: cls, text: label, attrs: { type: 'button', 'data-act': act } });
   list.replaceChildren(
     ...sorted.map((inv) => {
       const t = computeTotals(inv);
       const who = inv.client.company || inv.client.name || 'No client';
+      const st = effectiveStatus(inv);
+      const owed = inv.docType === 'invoice' && (st === 'Unpaid' || st === 'Overdue');
       const actions = el('div', { class: 'dlg-actions' }, [
-        el('button', { class: 'mini-btn', text: 'Open', attrs: { type: 'button', 'data-act': 'open' } }),
-        el('button', { class: 'mini-btn', text: 'Duplicate', attrs: { type: 'button', 'data-act': 'dup' } }),
-        el('button', { class: 'mini-btn danger', text: 'Delete', attrs: { type: 'button', 'data-act': 'del' } }),
+        btn('open', 'Open'),
+        inv.docType === 'quote' && st !== 'Declined' ? btn('convert', 'Convert to invoice') : null,
+        owed ? btn('remind', 'Remind') : null,
+        owed ? btn('paid', 'Mark paid') : null,
+        inv.docType === 'invoice' && inv.meta.issuedAt !== null ? btn('credit', 'Credit note') : null,
+        btn('repeat', 'Repeat next month'),
+        btn('dup', 'Duplicate'),
+        btn('del', 'Delete', 'mini-btn danger'),
       ]);
       return el('li', { class: `dlg-item${inv.id === currentId ? ' current' : ''}`, attrs: { 'data-id': inv.id } }, [
         el('div', { class: 'dlg-main' }, [
-          el('span', { class: 'dlg-num', text: `#${inv.meta.number}` }),
+          el('span', { class: 'dlg-num' }, [
+            `#${inv.meta.number}`,
+            el('span', { class: 'dlg-type', text: DOC_TITLES[inv.docType] }),
+            inv.meta.issuedAt !== null ? el('span', { class: 'dlg-lock', text: 'Issued' }) : null,
+          ]),
           el('span', { class: 'dlg-who', text: who }),
           el('span', { class: 'dlg-date', text: formatDate(inv.meta.issueDate, inv.meta.locale) }),
         ]),
         el('div', { class: 'dlg-side' }, [
-          el('span', { class: 'dlg-total', text: formatMoney(t.total, inv.meta.currency, inv.meta.locale) }),
-          el('span', { class: `inv-status ${inv.meta.status.toLowerCase()}`, text: inv.meta.status }),
+          el('span', { class: 'dlg-total', text: formatMoney(owed ? t.balance : t.total, inv.meta.currency, inv.meta.locale) }),
+          el('span', { class: `inv-status ${st.toLowerCase()}`, text: st }),
         ]),
         actions,
       ]);
     }),
   );
+}
+
+/** Open the user's mail app with a drafted reminder, or copy it if there is no email. */
+async function sendReminder(inv: InvoiceState): Promise<void> {
+  const t = computeTotals(inv);
+  const body = suggestNote('reminder', {
+    client: inv.client.name.split(' ')[0] ?? '',
+    business: inv.business.name,
+    dueDate: formatDate(inv.meta.dueDate, inv.meta.locale),
+    total: formatMoney(t.balance, inv.meta.currency, inv.meta.locale),
+    number: inv.meta.number,
+  });
+  const signed = `${body}\n\n${inv.business.name}`.trim();
+  const subject = `Payment reminder: invoice #${inv.meta.number}`;
+  const email = inv.client.email.trim();
+  if (email && /^[^\s@]+@[^\s@]+$/.test(email)) {
+    const href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(signed)}`;
+    const a = el('a', { attrs: { href } });
+    a.click();
+    showToast('Reminder opened in your mail app');
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(`${subject}\n\n${signed}`);
+    showToast('No client email saved, so the reminder was copied instead');
+  } catch {
+    showToast('Add the client’s email to send a reminder', 'error');
+  }
 }
 
 function openInvoices(): void {
@@ -392,6 +619,29 @@ function openInvoices(): void {
 byId('invoicesBtn').addEventListener('click', openInvoices);
 invoiceSearch.addEventListener('input', renderInvoiceList);
 byId('closeInvoicesBtn').addEventListener('click', () => dialog.close());
+byId('drawerFilters').addEventListener('click', (e) => {
+  const f = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-filter]')?.dataset.filter;
+  if (!f) return;
+  drawerFilter = f as DrawerFilter;
+  renderInvoiceList();
+});
+
+/** Edit a saved document that isn't the one open in the editor. */
+function updateDoc(id: string, mutate: (d: InvoiceState) => void): void {
+  if (id === store.get().id) {
+    store.update(mutate);
+    persist();
+    return;
+  }
+  invoices = invoices.map((d) => {
+    if (d.id !== id) return d;
+    const copy = structuredClone(d);
+    mutate(copy);
+    copy.updatedAt = Date.now();
+    return copy;
+  });
+  saveInvoices(invoices);
+}
 dialog.addEventListener('click', (e) => {
   if (e.target === dialog) dialog.close(); // backdrop click
 });
@@ -406,28 +656,46 @@ byId('invoiceList').addEventListener('click', (e) => {
   const inv = invoices.find((i) => i.id === id);
   if (!btn || !inv) return;
   const act = btn.dataset.act;
+  const startFrom = (doc: InvoiceState, message: string) => {
+    load(doc);
+    dialog.close();
+    showToast(message);
+  };
   if (act === 'open') {
     load(inv);
     dialog.close();
   } else if (act === 'dup') {
-    const copy: InvoiceState = {
-      ...structuredClone(inv),
-      id: crypto.randomUUID(),
-      meta: { ...inv.meta, number: freshInvoice().meta.number, status: 'Draft' },
-      items: inv.items.map((it) => ({ ...it, id: crypto.randomUUID() })),
-    };
-    load(copy);
-    dialog.close();
-    showToast(`Duplicated as #${copy.meta.number}`);
+    const copy = duplicateDoc(inv, invoices);
+    startFrom(copy, `Duplicated as #${copy.meta.number}`);
+  } else if (act === 'repeat') {
+    const copy = repeatNextPeriod(inv, invoices);
+    startFrom(copy, `#${copy.meta.number} created for next month`);
+  } else if (act === 'convert') {
+    const created = invoiceFromQuote(inv, invoices);
+    updateDoc(inv.id, (d) => (d.meta.status = 'Accepted'));
+    startFrom(created, `Quote #${inv.meta.number} converted to invoice #${created.meta.number}`);
+  } else if (act === 'credit') {
+    const cn = creditNoteFor(inv, invoices);
+    startFrom(cn, `Credit note #${cn.meta.number} started`);
+  } else if (act === 'remind') {
+    void sendReminder(inv);
+  } else if (act === 'paid') {
+    updateDoc(inv.id, (d) => (d.meta.status = 'Paid'));
+    renderInvoiceList();
+    showToast(`#${inv.meta.number} marked as paid`);
   } else if (act === 'del') {
-    if (!confirm(`Delete invoice #${inv.meta.number}? This cannot be undone.`)) return;
+    const issued = inv.meta.issuedAt !== null;
+    const warning = issued
+      ? `#${inv.meta.number} was issued. Deleting issued documents leaves a gap in your numbering; a credit note is usually better. Delete anyway?`
+      : `Delete #${inv.meta.number}? This cannot be undone.`;
+    if (!confirm(warning)) return;
     invoices = invoices.filter((i) => i.id !== inv.id);
     saveInvoices(invoices);
     if (inv.id === store.get().id) {
       dirty = false;
       const next = [...invoices].sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? freshInvoice();
-      store.set(next);
       rerenderItems(next);
+      store.set(next);
       saveCurrentId(next.id);
     }
     renderInvoiceList();
@@ -439,9 +707,64 @@ byId('invoiceList').addEventListener('click', (e) => {
 
 byId('backupBtn').addEventListener('click', () => {
   persist();
-  downloadBackup(invoices, profile, loadCatalog());
+  downloadBackup(invoices, profile, catalog.all());
+  saveLastBackup(Date.now());
+  renderDataPanel();
   showToast('Backup downloaded');
 });
+byId('nudgeBackupBtn').addEventListener('click', () => byId('backupBtn').click());
+
+byId('csvBtn').addEventListener('click', () => {
+  persist();
+  if (invoices.length === 0) {
+    showToast('Nothing to export yet', 'error');
+    return;
+  }
+  // BOM so Excel opens accented text as UTF-8.
+  const blob = new Blob(['\ufeff', documentsToCsv(invoices)], { type: 'text/csv;charset=utf-8' });
+  downloadBlob(blob, safeFileName(`sasu-invoices-${new Date().toISOString().slice(0, 10)}`, 'csv'));
+  showToast('CSV downloaded');
+});
+
+const BACKUP_NUDGE_DAYS = 14;
+
+/** Last-backup line, backup reminder and storage-persistence note. */
+function renderDataPanel(): void {
+  const last = loadLastBackup();
+  byId('lastBackup').textContent = last
+    ? `Last backup ${new Date(last).toLocaleDateString(undefined, { dateStyle: 'medium' })}.`
+    : 'Not backed up yet.';
+  const stale = !last || Date.now() - last > BACKUP_NUDGE_DAYS * 86_400_000;
+  byId('backupNudge').hidden = !(invoices.length > 0 && stale);
+  byId('backupNudgeText').textContent = last
+    ? `Your last backup is more than ${BACKUP_NUDGE_DAYS} days old.`
+    : 'You haven’t backed up your invoices yet.';
+}
+
+/**
+ * Ask the browser not to evict our storage, and explain the outcome. Only
+ * asks (which may show a prompt in Firefox) after the user has saved work.
+ */
+let persistAsked = false;
+async function requestPersistence(ask = true): Promise<void> {
+  const note = byId('storageNote');
+  const fallback =
+    'Some browsers (notably Safari) delete site data after 7 days without a visit. Install the app or keep a backup.';
+  if (!navigator.storage?.persist) {
+    note.textContent = fallback;
+    return;
+  }
+  try {
+    let persisted = await navigator.storage.persisted();
+    if (!persisted && ask && !persistAsked) {
+      persistAsked = true;
+      persisted = await navigator.storage.persist();
+    }
+    note.textContent = persisted ? 'This browser has agreed not to clear your data automatically.' : fallback;
+  } catch {
+    note.textContent = fallback;
+  }
+}
 
 const importInput = byId<HTMLInputElement>('importInput');
 byId('importBtn').addEventListener('click', () => importInput.click());
@@ -454,6 +777,16 @@ importInput.addEventListener('change', async () => {
     const n = backup.invoices.length;
     if (!confirm(`Import ${n} invoice${n === 1 ? '' : 's'}? Invoices with the same ID will be replaced.`)) return;
     persist();
+    // Logos from a file are untrusted: run them through the upload checks again.
+    let dropped = 0;
+    for (const inv of backup.invoices) {
+      if (!inv.style.logo) continue;
+      const safe = await recheckLogo(inv.style.logo);
+      if (!safe) dropped++;
+      inv.style.logo = safe;
+    }
+    if (backup.profile?.logo) backup.profile.logo = await recheckLogo(backup.profile.logo);
+    if (backup.catalog.length) catalog.merge(backup.catalog);
     const ids = new Set(backup.invoices.map((i) => i.id));
     invoices = [...backup.invoices, ...invoices.filter((i) => !ids.has(i.id))];
     if (backup.profile) {
@@ -463,7 +796,10 @@ importInput.addEventListener('change', async () => {
     if (!saveInvoices(invoices)) showToast('Imported, but browser storage is full; some data may not persist.', 'error');
     const first = backup.invoices[0];
     if (first) load(first);
-    showToast(`Imported ${n} invoice${n === 1 ? '' : 's'}`);
+    showToast(
+      `Imported ${n} document${n === 1 ? '' : 's'}${dropped ? `; ${dropped} logo${dropped === 1 ? '' : 's'} failed verification and ${dropped === 1 ? 'was' : 'were'} removed` : ''}`,
+      dropped ? 'error' : 'ok',
+    );
   } catch (err) {
     showToast(err instanceof Error ? err.message : 'Import failed.', 'error');
   }
@@ -476,11 +812,12 @@ byId('wipeBtn').addEventListener('click', () => {
   clearAllData();
   invoices = [];
   profile = null;
+  catalog.clear();
   const inv = sampleInvoice();
+  rerenderItems(inv);
   suppressSave = true;
   store.set(inv);
   suppressSave = false;
-  rerenderItems(inv);
   renderClientPicker();
   indicator.textContent = '';
   showToast('All local data deleted');
@@ -559,6 +896,71 @@ function renderChrome(s: InvoiceState, totals: ReturnType<typeof computeTotals>)
   });
 }
 
+/** Per-document-type fields, payment panel, legal wording and the issue/lock state. */
+function renderDocState(s: InvoiceState, totals: ReturnType<typeof computeTotals>): void {
+  // Status options valid for this document type
+  const statusSel = byId<HTMLSelectElement>('f-status');
+  const allowed = STATUSES_BY_TYPE[s.docType];
+  if (statusSel.dataset.type !== s.docType) {
+    fillSelect(statusSel, allowed.map((v) => ({ value: v, label: v })));
+    statusSel.dataset.type = s.docType;
+    statusSel.value = s.meta.status;
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-show]').forEach((node) => {
+    node.hidden = !node.dataset.show!.split(' ').includes(s.docType);
+  });
+  byId('supplyDateWrap').hidden = s.meta.supplySameAsIssue;
+
+  // Payment panel
+  document.querySelectorAll<HTMLElement>('[data-pay]').forEach((node) => {
+    node.hidden = !node.dataset.pay!.split(' ').includes(s.payment.method);
+  });
+  const qr = paymentQr(s, totals);
+  const payStatus = byId('payStatus');
+  payStatus.classList.toggle('error', Boolean(qr && 'error' in qr));
+  payStatus.textContent =
+    s.payment.method === 'none'
+      ? 'Add a QR code your client can scan to pay.'
+      : qr === null
+        ? s.docType === 'invoice' || s.docType === 'proforma'
+          ? 'Nothing left to pay, so no code is shown.'
+          : 'Payment codes appear on invoices and proformas only.'
+        : 'error' in qr
+          ? qr.error
+          : 'The code is on the invoice preview and in the PDF.';
+
+  // Legal wording
+  document.querySelectorAll<HTMLInputElement>('[data-legal]').forEach((box) => {
+    box.checked = s.notes.legalMentions.includes(box.dataset.legal!);
+  });
+  const warnings = legalWarnings(s);
+  const warnBox = byId('legalWarnings');
+  warnBox.hidden = warnings.length === 0;
+  warnBox.replaceChildren(...warnings.map((w) => el('p', { text: w })));
+
+  // Issue / lock
+  const locked = isLocked(s);
+  const issueBtn = byId<HTMLButtonElement>('issueBtn');
+  issueBtn.hidden = locked;
+  issueBtn.textContent = `Issue ${DOC_TITLES[s.docType].toLowerCase()}`;
+  byId('lockBanner').hidden = !locked;
+  if (locked) {
+    const when = new Date(s.meta.issuedAt!).toLocaleDateString(s.meta.locale, { dateStyle: 'medium' });
+    byId('lockText').textContent = `${DOC_TITLES[s.docType]} issued on ${when} and locked. To correct it, create a credit note.`;
+    byId('creditFromLockBtn').hidden = s.docType !== 'invoice';
+  }
+  byId('colDetails').classList.toggle('is-locked', locked);
+  document
+    .querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement>(
+      '#invoiceForm input, #invoiceForm select, #invoiceForm textarea, #invoiceForm button:not(.sec-header), .inspector .field-grid input, .inspector .combo button, #clearBtn',
+    )
+    .forEach((node) => {
+      if ('lockExempt' in node.dataset) return;
+      node.disabled = locked;
+    });
+}
+
 function renderAll(s: InvoiceState): void {
   const totals = computeTotals(s);
   applyAccent(s.style.accent);
@@ -590,7 +992,9 @@ function renderAll(s: InvoiceState): void {
   byId('discFixedBtn').textContent = symbol;
   byId<HTMLInputElement>('f-discount').max = s.totals.discountType === 'percent' ? '100' : '';
   byId('removeLogoBtn').hidden = !s.style.logo;
+  renderLogoField(s.style.logo);
   renderChrome(s, totals);
+  renderDocState(s, totals);
   document.title = `${s.meta.number ? `${s.meta.number} · ` : ''}SASU Invoice`;
 }
 
@@ -602,4 +1006,7 @@ store.subscribe((s) => {
 rerenderItems(store.get());
 renderAll(store.get());
 renderClientPicker();
+renderDataPanel();
+void requestPersistence(invoices.length > 0);
+initPwa();
 if (MOBILE.matches) switchTab('colDetails');

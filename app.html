@@ -13,6 +13,7 @@
     <meta name="author" content="Suha Anas" />
     <link rel="canonical" href="https://sasuinvoice.netlify.app/app.html" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
@@ -78,6 +79,7 @@
         <div class="tb-actions">
             <button type="button" class="btn btn-ghost" id="invoicesBtn" title="Your invoices (⌘K)"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 5h12M4 10h12M4 15h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span>Invoices</span></button>
             <button type="button" class="btn btn-ghost" id="newBtn"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>New</span></button>
+            <button type="button" class="btn btn-secondary" id="issueBtn" title="Assign the final number and lock this document">Issue</button>
             <span class="tb-divider" aria-hidden="true"></span>
             <button type="button" class="btn btn-ghost icon-only" data-action="print" aria-label="Print" title="Print"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M6 7V3h8v4" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><rect x="3" y="7" width="14" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="6" y="12" width="8" height="5" rx="1" stroke="currentColor" stroke-width="1.6"/></svg></button>
             <button type="button" class="btn btn-secondary" data-action="png"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="2.5" stroke="currentColor" stroke-width="1.6"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><path d="M3 13l4-4 4 4 2-2 4 4" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span>PNG</span></button>
@@ -92,6 +94,14 @@
                 <button type="button" class="btn btn-secondary" data-proxy="invoicesBtn">Invoices</button>
                 <button type="button" class="btn btn-secondary" data-proxy="newBtn">New</button>
             </div>
+            <div class="lock-banner" id="lockBanner" hidden>
+                <p id="lockText">Issued and locked.</p>
+                <div class="lock-actions">
+                    <button type="button" class="btn btn-secondary btn-xs" id="creditFromLockBtn">Create credit note</button>
+                    <button type="button" class="btn btn-ghost btn-xs" id="unlockBtn">Unlock</button>
+                </div>
+            </div>
+            <div class="warn-list" id="legalWarnings" hidden></div>
             <form id="invoiceForm" autocomplete="off" novalidate>
                     <section class="sec">
                         <button type="button" class="sec-header" aria-expanded="true" aria-controls="body-biz">
@@ -107,10 +117,18 @@
                             <div class="fg">
                                 <label for="logoInput">Logo <span class="opt">Optional</span></label>
                                 <div class="logo-field">
-                                    <input id="logoInput" type="file" accept="image/png,image/jpeg,image/webp" />
+                                    <input id="logoInput" class="file-input" type="file" accept="image/png,image/jpeg,image/webp" />
+                                    <label class="logo-drop" for="logoInput" id="logoDrop">
+                                        <span class="logo-thumb" id="logoThumb" aria-hidden="true">
+                                            <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><path d="M3.5 14l4-4 3.5 3.5 2-2 3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                                        </span>
+                                        <span class="logo-text">
+                                            <span class="logo-title" id="logoTitle">Upload logo</span>
+                                            <span class="logo-sub" id="logoSub">PNG, JPEG or WebP, up to 2 MB. Or drop it here.</span>
+                                        </span>
+                                    </label>
                                     <button type="button" class="btn btn-ghost btn-xs" id="removeLogoBtn" hidden>Remove</button>
                                 </div>
-                                <p class="hint">PNG, JPEG or WebP, up to 2 MB.</p>
                             </div>
                             <div class="fg">
                                 <label for="f-bizAddress">Address</label>
@@ -136,6 +154,29 @@
                                 <input id="f-bizTaxId" data-bind="business.taxId" type="text" placeholder="VAT, SIRET, GSTIN" maxlength="500" />
                             </div>
                             </div>
+                            <details class="subgroup">
+                                <summary>Company registration details</summary>
+                                <div class="fg-row">
+                                    <div class="fg">
+                                        <label for="f-legalForm">Legal form <span class="opt">Optional</span></label>
+                                        <input id="f-legalForm" data-bind="business.legal.form" type="text" placeholder="SASU, Ltd, LLC" maxlength="80" />
+                                    </div>
+                                    <div class="fg">
+                                        <label for="f-capital">Share capital <span class="opt">Optional</span></label>
+                                        <input id="f-capital" data-bind="business.legal.capital" type="text" placeholder="1 000 €" maxlength="80" />
+                                    </div>
+                                </div>
+                                <div class="fg-row">
+                                    <div class="fg">
+                                        <label for="f-regNumber">Registration number <span class="opt">Optional</span></label>
+                                        <input id="f-regNumber" data-bind="business.legal.regNumber" type="text" placeholder="SIREN 123 456 789" maxlength="80" />
+                                    </div>
+                                    <div class="fg">
+                                        <label for="f-regPlace">Registry <span class="opt">Optional</span></label>
+                                        <input id="f-regPlace" data-bind="business.legal.regPlace" type="text" placeholder="RCS Paris" maxlength="80" />
+                                    </div>
+                                </div>
+                            </details>
                             <p class="hint">Remembered for your next invoices.</p>
                         </div>
                     </section>
@@ -147,18 +188,44 @@
                         </button>
                         <div class="sec-body open" id="body-inv">
                             <div class="fg-row">
+                                <div class="fg">
+                                    <label for="f-docType">Document</label>
+                                    <select id="f-docType" data-bind="docType">
+                                        <option value="invoice">Invoice</option>
+                                        <option value="quote">Quote / estimate</option>
+                                        <option value="credit">Credit note</option>
+                                        <option value="receipt">Receipt</option>
+                                        <option value="proforma">Proforma invoice</option>
+                                    </select>
+                                </div>
+                                <div class="fg">
+                                    <label for="f-operation">Operation <span class="opt">Optional</span></label>
+                                    <select id="f-operation" data-bind="meta.operation">
+                                        <option value="">Not specified</option>
+                                        <option value="goods">Goods</option>
+                                        <option value="services">Services</option>
+                                        <option value="mixed">Goods and services</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="fg-row" data-show="credit">
+                                <div class="fg">
+                                    <label for="f-refNumber">Corrects invoice</label>
+                                    <input id="f-refNumber" data-bind="ref.number" type="text" placeholder="INV-012" maxlength="64" />
+                                </div>
+                                <div class="fg">
+                                    <label for="f-refDate">Invoice date</label>
+                                    <input id="f-refDate" data-bind="ref.date" type="date" />
+                                </div>
+                            </div>
+                            <div class="fg-row">
                             <div class="fg">
                                 <label for="f-number">Invoice number</label>
                                 <input id="f-number" data-bind="meta.number" type="text" maxlength="64" />
                             </div>
                             <div class="fg">
                                 <label for="f-status">Status</label>
-                                <select id="f-status" data-bind="meta.status">
-                                        <option value="Draft">Draft</option>
-                                        <option value="Unpaid">Unpaid</option>
-                                        <option value="Paid">Paid</option>
-                                        <option value="Overdue">Overdue</option>
-                                    </select>
+                                <select id="f-status" data-bind="meta.status" data-lock-exempt></select>
                             </div>
                             </div>
                             <div class="fg-row">
@@ -172,24 +239,38 @@
                             </div>
                             </div>
                             <div class="fg-row">
-                            <div class="fg">
-                                <label for="f-issueDate">Issue date</label>
-                                <input id="f-issueDate" data-bind="meta.issueDate" type="date" maxlength="10" />
-                            </div>
-                            <div class="fg">
-                                <label for="f-dueTerm">Payment terms</label>
-                                <select id="f-dueTerm" data-bind="meta.dueTerm" data-options="dueTerm"></select>
-                            </div>
+                                <div class="fg">
+                                    <label for="f-issueDate">Issue date</label>
+                                    <input id="f-issueDate" data-bind="meta.issueDate" type="date" />
+                                </div>
+                                <div class="fg" data-show="invoice proforma">
+                                    <label for="f-dueTerm">Payment terms</label>
+                                    <select id="f-dueTerm" data-bind="meta.dueTerm" data-options="dueTerm"></select>
+                                </div>
+                                <div class="fg" data-show="quote">
+                                    <label for="f-validUntil">Valid until</label>
+                                    <input id="f-validUntil" data-bind="meta.validUntil" type="date" />
+                                </div>
                             </div>
                             <div class="fg-row">
-                            <div class="fg">
-                                <label for="f-dueDate">Due date</label>
-                                <input id="f-dueDate" data-bind="meta.dueDate" type="date" maxlength="10" />
+                                <div class="fg" data-show="invoice proforma">
+                                    <label for="f-dueDate">Due date</label>
+                                    <input id="f-dueDate" data-bind="meta.dueDate" type="date" />
+                                </div>
+                                <div class="fg">
+                                    <label for="f-po">PO number <span class="opt">Optional</span></label>
+                                    <input id="f-po" data-bind="meta.poNumber" type="text" placeholder="PO-2026-001" maxlength="64" />
+                                </div>
                             </div>
                             <div class="fg">
-                                <label for="f-po">PO number <span class="opt">Optional</span></label>
-                                <input id="f-po" data-bind="meta.poNumber" type="text" placeholder="PO-2026-001" maxlength="64" />
+                                <label class="check">
+                                    <input type="checkbox" id="f-supplySame" data-bind="meta.supplySameAsIssue" />
+                                    <span>Goods or services supplied on the issue date</span>
+                                </label>
                             </div>
+                            <div class="fg" id="supplyDateWrap">
+                                <label for="f-supplyDate">Supply date</label>
+                                <input id="f-supplyDate" data-bind="meta.supplyDate" type="date" />
                             </div>
                         </div>
                     </section>
@@ -234,6 +315,17 @@
                                 <label for="f-clientTaxId">Client tax / VAT ID <span class="opt">Optional</span></label>
                                 <input id="f-clientTaxId" data-bind="client.taxId" type="text" maxlength="500" />
                             </div>
+                            <div class="fg">
+                                <label for="f-clientReg">Client company number <span class="opt">Optional</span></label>
+                                <input id="f-clientReg" data-bind="client.regNumber" type="text" placeholder="e.g. SIREN" maxlength="80" />
+                            </div>
+                            <details class="subgroup">
+                                <summary>Different delivery address</summary>
+                                <div class="fg">
+                                    <label for="f-deliveryAddress">Delivery address</label>
+                                    <textarea id="f-deliveryAddress" data-bind="client.deliveryAddress" rows="2" maxlength="4000"></textarea>
+                                </div>
+                            </details>
                         </div>
                     </section>
                     <section class="sec">
@@ -244,10 +336,15 @@
                         </button>
                         <div class="sec-body open" id="body-items">
                             <ol id="itemsContainer" class="items-list"></ol>
+                            <div class="items-add">
                             <button type="button" class="add-row-btn" id="addItemBtn">
                                 <svg width="12" height="12" viewBox="0 0 13 13" fill="none" aria-hidden="true"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
                                 Add line item
                             </button>
+                            <select id="catalogPicker" class="catalog-picker" aria-label="Insert a saved item" hidden>
+                                <option value="">Insert saved item…</option>
+                            </select>
+                            </div>
                             <p class="hint">Type shorthand like “logo” and press Suggest for professional wording. Leave Tax % empty to use the invoice rate.</p>
                         </div>
                     </section>
@@ -284,12 +381,18 @@
                                 <label for="f-footer">Footer / legal note <span class="opt">Optional</span></label>
                                 <textarea id="f-footer" data-bind="notes.footer" rows="2" maxlength="4000" placeholder="e.g. VAT not applicable, art. 293 B CGI"></textarea>
                             </div>
+                            <fieldset class="fg legal-set">
+                                <legend>Legal wording</legend>
+                                <div id="legalMentions" class="check-list"></div>
+                                <p class="hint">Standard wording printed at the bottom of the document. Check it applies to you; it is not legal advice.</p>
+                            </fieldset>
                         </div>
                     </section>
             </form>
             <div class="form-foot">
                 <button type="button" class="btn btn-ghost btn-danger-text" id="clearBtn">Clear this invoice</button>
-                <button type="button" class="btn btn-primary mobile-only" data-goto="colPreview">Preview invoice</button>
+                <button type="button" class="btn btn-secondary mobile-only" data-proxy="issueBtn">Issue</button>
+                <button type="button" class="btn btn-primary mobile-only" data-goto="colPreview">Preview</button>
             </div>
         </aside>
 
@@ -342,9 +445,43 @@
                     <input id="f-shipping" data-bind="totals.shipping" data-num type="number" min="0" step="any" inputmode="decimal" />
 
                     <label for="f-paid">Amount paid</label>
-                    <input id="f-paid" data-bind="totals.amountPaid" data-num type="number" min="0" step="any" inputmode="decimal" />
+                    <input id="f-paid" data-bind="totals.amountPaid" data-num data-lock-exempt type="number" min="0" step="any" inputmode="decimal" />
                 </div>
                 <div class="sum-rows" id="spTotals" aria-live="polite"></div>
+            </section>
+
+            <section class="panel" id="paymentPanel">
+                <h2 class="panel-title">Get paid</h2>
+                <div class="fg">
+                    <label for="f-payMethod">Scan-to-pay code</label>
+                    <select id="f-payMethod" data-bind="payment.method" data-lock-exempt>
+                        <option value="none">None</option>
+                        <option value="sepa">SEPA bank transfer (EUR)</option>
+                        <option value="upi">UPI (INR)</option>
+                        <option value="link">Payment link (Stripe, PayPal…)</option>
+                    </select>
+                </div>
+                <div class="fg" data-pay="sepa upi">
+                    <label for="f-payName">Account holder</label>
+                    <input id="f-payName" data-bind="payment.beneficiary" data-lock-exempt type="text" maxlength="70" placeholder="Defaults to your business name" />
+                </div>
+                <div class="fg" data-pay="sepa">
+                    <label for="f-iban">IBAN</label>
+                    <input id="f-iban" data-bind="payment.iban" data-lock-exempt type="text" maxlength="42" autocomplete="off" spellcheck="false" placeholder="FR76 3000 6000 0112 3456 7890 189" />
+                </div>
+                <div class="fg" data-pay="sepa">
+                    <label for="f-bic">BIC <span class="opt">Optional</span></label>
+                    <input id="f-bic" data-bind="payment.bic" data-lock-exempt type="text" maxlength="11" spellcheck="false" />
+                </div>
+                <div class="fg" data-pay="upi">
+                    <label for="f-upi">UPI ID</label>
+                    <input id="f-upi" data-bind="payment.upiId" data-lock-exempt type="text" maxlength="80" spellcheck="false" placeholder="name@bank" />
+                </div>
+                <div class="fg" data-pay="link">
+                    <label for="f-payLink">Payment link</label>
+                    <input id="f-payLink" data-bind="payment.link" data-lock-exempt type="url" maxlength="500" placeholder="https://buy.stripe.com/…" />
+                </div>
+                <p class="pay-status" id="payStatus" aria-live="polite"></p>
             </section>
 
             <section class="panel">
@@ -385,15 +522,36 @@
                 </div>
             </section>
 
+            <section class="panel" id="catalogPanel" hidden>
+                <h2 class="panel-title">Saved items</h2>
+                <ul class="catalog-list" id="catalogList"></ul>
+            </section>
+
             <section class="panel">
                 <h2 class="panel-title">Your data</h2>
-                <p class="panel-note">Invoices are saved in this browser only. Download a backup to keep a copy or move to another device.</p>
+                <div class="backup-nudge" id="backupNudge" hidden>
+                    <p id="backupNudgeText">You haven’t backed up your invoices yet.</p>
+                    <button type="button" class="btn btn-primary btn-xs" id="nudgeBackupBtn">Download backup</button>
+                </div>
+                <p class="panel-note">Invoices are saved in this browser only. <span id="lastBackup"></span></p>
+                <p class="panel-note" id="storageNote"></p>
                 <div class="data-actions">
+                    <button type="button" class="btn btn-secondary" id="installBtn" hidden>Install app</button>
+                    <button type="button" class="btn btn-secondary" id="csvBtn">Export CSV</button>
                     <button type="button" class="btn btn-secondary" id="backupBtn">Download backup</button>
                     <button type="button" class="btn btn-secondary" id="importBtn">Import backup</button>
                     <input type="file" id="importInput" accept="application/json,.json" aria-label="Backup file" hidden />
                     <button type="button" class="btn btn-ghost btn-danger-text" id="wipeBtn">Delete all local data</button>
                 </div>
+                <details class="subgroup notice">
+                    <summary>What SASU Invoice doesn’t do</summary>
+                    <ul>
+                        <li>It doesn’t send invoices. It is not a French approved e-invoicing platform (PA) or a Peppol access point.</li>
+                        <li>It doesn’t archive invoices for legal retention. Keep your own copies of what you send.</li>
+                        <li>It doesn’t send emails or automatic reminders.</li>
+                        <li>It can’t guarantee your invoices meet every legal requirement. Check with your accountant.</li>
+                    </ul>
+                </details>
             </section>
 
         </aside>
@@ -409,6 +567,14 @@
         <div class="drawer-search">
             <input type="search" id="invoiceSearch" placeholder="Search by number or client" aria-label="Search invoices" />
         </div>
+        <div class="drawer-filters seg seg-full" role="group" aria-label="Filter documents" id="drawerFilters">
+            <button type="button" data-filter="all" aria-pressed="true">All</button>
+            <button type="button" data-filter="unpaid" aria-pressed="false">Unpaid</button>
+            <button type="button" data-filter="overdue" aria-pressed="false">Overdue</button>
+            <button type="button" data-filter="paid" aria-pressed="false">Paid</button>
+            <button type="button" data-filter="quotes" aria-pressed="false">Quotes</button>
+        </div>
+        <p class="drawer-summary" id="drawerSummary"></p>
         <ul class="dlg-list" id="invoiceList"></ul>
         <div class="drawer-foot">
             <button type="button" class="btn btn-primary wide" id="dlgNewBtn">New invoice</button>

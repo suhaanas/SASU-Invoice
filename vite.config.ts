@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { VitePWA } from 'vite-plugin-pwa';
 import { defineConfig } from 'vitest/config';
 
 /** Serve the production security headers from netlify.toml in `vite preview` too. */
@@ -16,6 +17,34 @@ export default defineConfig({
     // jsPDF lazy-imports these for doc.html()/SVG, which we never use.
     alias: { html2canvas: stub, dompurify: stub, canvg: stub },
   },
+  plugins: [
+    VitePWA({
+      registerType: 'prompt',
+      // We call registerSW() ourselves (src/editor/pwa.ts) to show update prompts.
+      injectRegister: false,
+      includeAssets: ['favicon.svg', 'robots.txt'],
+      manifest: {
+        name: 'SASU Invoice',
+        short_name: 'SASU Invoice',
+        description: 'Create invoices, quotes and credit notes in your browser. Works offline.',
+        start_url: '/app.html',
+        scope: '/',
+        display: 'standalone',
+        background_color: '#f4f5f7',
+        theme_color: '#ffffff',
+        icons: [
+          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,woff,woff2,ttf,webmanifest}'],
+        navigateFallback: null,
+        cleanupOutdatedCaches: true,
+      },
+    }),
+  ],
   preview: { headers: netlifyHeaders() },
   build: {
     target: 'es2022',

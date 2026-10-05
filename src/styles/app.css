@@ -478,9 +478,85 @@ kbd {
 }
 
 .logo-field {
+    position: relative;
     display: flex;
     gap: 8px;
     align-items: center;
+}
+
+/* Native file input stays focusable for keyboard users but is visually
+   replaced by the styled drop zone label. */
+.file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    overflow: hidden;
+}
+
+.logo-drop {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px dashed var(--field);
+    border-radius: 10px;
+    background: #fbfbfc;
+    cursor: pointer;
+    transition: border-color 0.12s, background-color 0.12s;
+}
+
+.logo-drop:hover,
+.logo-drop.is-dragover {
+    border-color: var(--brand);
+    background: var(--brand-wash);
+}
+
+.file-input:focus-visible + .logo-drop {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+}
+
+.file-input:disabled + .logo-drop {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.logo-thumb {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    color: var(--faint);
+    overflow: hidden;
+}
+
+.logo-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.logo-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.logo-title {
+    font-weight: 600;
+    color: var(--brand-ink);
+}
+
+.logo-sub {
+    font-size: 12px;
+    color: var(--faint);
 }
 
 .form-foot {
@@ -1516,4 +1592,286 @@ input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
+}
+
+/* =========================================================================
+   v3.1: document lifecycle, legal, payments, catalogue, data safety
+   ========================================================================= */
+
+.lock-banner,
+.warn-list {
+    margin: 16px 20px 0;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.lock-banner {
+    background: var(--brand-wash);
+    border: 1px solid #d9dcfd;
+    color: var(--ink);
+}
+
+.lock-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.warn-list {
+    background: #fff8e6;
+    border: 1px solid #f6e3b0;
+    color: #6b4a00;
+}
+
+.warn-list p + p {
+    margin-top: 4px;
+}
+
+.form-pane.is-locked .sec-body {
+    opacity: 0.72;
+}
+
+.check {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13.5px;
+    color: var(--ink);
+    cursor: pointer;
+    line-height: 1.4;
+}
+
+.fg .check {
+    font-weight: 400;
+    color: var(--ink);
+    font-size: 13.5px;
+}
+
+.check input {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 1px;
+    accent-color: var(--brand);
+}
+
+.check-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.legal-set {
+    border: 0;
+    gap: 10px;
+}
+
+.legal-set legend {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--graphite);
+    margin-bottom: 8px;
+}
+
+.subgroup {
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 0 12px;
+}
+
+.subgroup > summary {
+    padding: 10px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--graphite);
+    cursor: pointer;
+}
+
+.subgroup[open] {
+    padding-bottom: 12px;
+}
+
+.subgroup[open] > summary {
+    margin-bottom: 4px;
+}
+
+.subgroup .fg + .fg,
+.subgroup .fg-row + .fg-row {
+    margin-top: 12px;
+}
+
+.notice ul {
+    padding-left: 18px;
+    list-style: disc;
+    font-size: 12.5px;
+    color: var(--graphite);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.items-add {
+    display: flex;
+    gap: 8px;
+}
+
+.items-add .add-row-btn {
+    flex: 1;
+}
+
+.catalog-picker {
+    max-width: 46%;
+    height: 38px;
+    padding: 0 8px;
+    border: 1px solid var(--field);
+    border-radius: 10px;
+    background: var(--paper);
+    font-size: 13px;
+    color: var(--graphite);
+}
+
+.ic-grid .ic-cat {
+    grid-column: span 2;
+}
+
+.ic-grid .ic-amount {
+    grid-column: span 2;
+    border-top: 0;
+    padding-top: 0;
+    align-self: end;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+}
+
+.ir-cat {
+    height: 34px;
+    padding: 0 6px;
+    border: 1px solid var(--field);
+    border-radius: 7px;
+    background: var(--paper);
+    font-size: 13px;
+}
+
+.ir-total {
+    height: 34px;
+    display: flex;
+    align-items: center;
+}
+
+.pay-status {
+    font-size: 12.5px;
+    color: var(--graphite);
+    margin-top: 8px;
+}
+
+.pay-status.error {
+    color: var(--danger);
+}
+
+#paymentPanel .fg + .fg {
+    margin-top: 10px;
+}
+
+.catalog-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.catalog-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--rule);
+}
+
+.catalog-row:last-child {
+    border-bottom: 0;
+}
+
+.catalog-desc {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.backup-nudge {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    background: #fff8e6;
+    border: 1px solid #f6e3b0;
+    color: #6b4a00;
+    font-size: 13px;
+}
+
+.drawer-filters {
+    margin: 0 20px 10px;
+}
+
+.drawer-filters button {
+    padding: 0 6px;
+}
+
+.drawer-summary {
+    margin: 0 20px 10px;
+    font-size: 12.5px;
+    color: var(--graphite);
+}
+
+.dlg-num {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.dlg-type,
+.dlg-lock {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--faint);
+}
+
+.dlg-lock {
+    color: var(--brand-ink);
+}
+
+.dlg-actions {
+    flex-wrap: wrap;
+}
+
+.toast-action {
+    margin-left: 8px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    font-weight: 600;
+    pointer-events: auto;
+}
+
+.toast.has-action {
+    pointer-events: auto;
+}
+
+#issueBtn {
+    border-color: var(--brand);
+    color: var(--brand-ink);
+}
+
+@media (max-width: 1100px) {
+    #issueBtn {
+        display: none;
+    }
 }
