@@ -5,7 +5,7 @@
  * where some primary sources (EUR-Lex, Légifrance) could not be re-fetched.
  * Verify each text against the official source before relying on it.
  */
-import type { InvoiceState } from './state';
+import type { InvoiceState } from './state.ts';
 
 export interface LegalMention {
   id: string;

@@ -131,6 +131,10 @@ kbd {
     transition: background-color 0.12s, border-color 0.12s, color 0.12s;
 }
 
+a.btn {
+    text-decoration: none;
+}
+
 .btn-primary {
     background: var(--brand);
     color: #fff;

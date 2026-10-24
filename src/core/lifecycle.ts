@@ -3,9 +3,9 @@
  * convert a quote into an invoice, and credit an issued invoice. All return a
  * new draft with a fresh id and the next number in the right series.
  */
-import { addMonths, dueDateFor, todayISO } from './dates';
-import { nextNumber } from './numbering';
-import { STATUSES_BY_TYPE, uid, type DocType, type InvoiceState } from './state';
+import { addMonths, dueDateFor, todayISO } from './dates.ts';
+import { nextNumber } from './numbering.ts';
+import { STATUSES_BY_TYPE, uid, type DocType, type InvoiceState } from './state.ts';
 
 /** A new unissued draft copied from `src`, optionally changing its type. */
 function draftFrom(src: InvoiceState, type: DocType, docs: InvoiceState[]): InvoiceState {

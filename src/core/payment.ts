@@ -6,9 +6,9 @@
  * - UPI: the `upi://pay` deep link, INR only.
  * - Link: a payment page the user pasted (Stripe, PayPal…), https only.
  */
-import type { Totals } from './calc';
-import { fromMinor } from './money';
-import type { InvoiceState } from './state';
+import type { Totals } from './calc.ts';
+import { fromMinor } from './money.ts';
+import type { InvoiceState } from './state.ts';
 
 export const normalizeIban = (s: string): string => s.replace(/\s+/g, '').toUpperCase();
 

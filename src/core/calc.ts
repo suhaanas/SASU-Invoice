@@ -4,8 +4,8 @@
  * Order: line amounts → subtotal → discount → tax (on discounted lines, per
  * line rate or invoice rate) → + shipping (untaxed) → total → − paid → balance.
  */
-import { roundHalfUp, toMinor } from './money';
-import type { InvoiceState, VatCategory } from './state';
+import { roundHalfUp, toMinor } from './money.ts';
+import type { InvoiceState, VatCategory } from './state.ts';
 
 export interface LineResult {
   id: string;

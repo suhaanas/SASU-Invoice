@@ -31,7 +31,7 @@ import {
 } from './core/state';
 import { LEGAL_MENTIONS, legalWarnings } from './core/legal';
 import { creditNoteFor, duplicateDoc, invoiceFromQuote, repeatNextPeriod } from './core/lifecycle';
-import { SERIES_PREFIX, findDuplicate, nextNumber } from './core/numbering';
+import { findDuplicate, nextNumber, seriesPrefix, type Prefixes } from './core/numbering';
 import { paymentQr } from './core/payment';
 import {
   applyProfile,
@@ -39,6 +39,7 @@ import {
   clientBook,
   loadCurrentId,
   loadLastBackup,
+  loadInvoicePrefix,
   loadInvoices,
   loadProfile,
   profileFromInvoice,
@@ -49,6 +50,8 @@ import {
 } from './core/storage';
 import { documentsToCsv } from './core/csv';
 import { initCatalog } from './editor/catalog';
+import { initCloudSync } from './editor/cloud';
+import { cloudConfig } from './cloud/config';
 import { initPwa } from './editor/pwa';
 import { NOTE_TONES, suggestNote, type NoteTone } from './core/suggestions';
 import type { Profile } from './core/validate';
@@ -63,10 +66,11 @@ import { showToast } from './ui/toast';
 
 let invoices = loadInvoices();
 let profile: Profile | null = loadProfile();
+const prefixes: Prefixes = { invoice: loadInvoicePrefix() };
 
 function freshInvoice(type: DocType = 'invoice'): InvoiceState {
   const inv = createInvoice({ docType: type });
-  inv.meta.number = nextNumber(type, invoices);
+  inv.meta.number = nextNumber(type, invoices, undefined, prefixes);
   inv.meta.status = STATUSES_BY_TYPE[type][0]!;
   return profile ? applyProfile(inv, profile) : inv;
 }
@@ -133,8 +137,8 @@ function onFieldInput(e: Event): void {
 function onDocTypeChange(before: InvoiceState, s: InvoiceState): void {
   const allowed = STATUSES_BY_TYPE[s.docType];
   if (!allowed.includes(s.meta.status)) s.meta.status = allowed[0]!;
-  if (s.meta.issuedAt === null && s.meta.number.startsWith(SERIES_PREFIX[before.docType])) {
-    s.meta.number = nextNumber(s.docType, invoices, s.id);
+  if (s.meta.issuedAt === null && s.meta.number.startsWith(seriesPrefix(before.docType, prefixes))) {
+    s.meta.number = nextNumber(s.docType, invoices, s.id, prefixes);
   }
   if (s.docType === 'credit' && !s.ref) s.ref = { number: '', date: '' };
   if (s.docType === 'quote' && !s.meta.validUntil) s.meta.validUntil = s.meta.dueDate;
@@ -366,6 +370,24 @@ let dirty = false;
 /** Set while resetting to the sample after a wipe, so it isn't re-saved. */
 let suppressSave = false;
 
+/** Optional cloud copy (null unless enabled for this browser in the dashboard). */
+const cloudSync = initCloudSync(
+  (status) => {
+    indicator.classList.remove('error');
+    if (status.kind === 'syncing') indicator.textContent = 'Saved · syncing…';
+    else if (status.kind === 'synced') indicator.textContent = 'Saved · synced to cloud';
+    else indicator.textContent = status.message;
+  },
+  ({ id, amountPaid, status }) => {
+    if (store.get().id !== id) return;
+    store.update((d) => {
+      d.totals.amountPaid = amountPaid;
+      d.meta.status = status;
+    });
+    showToast('Amount paid and status follow the payments recorded in the dashboard');
+  },
+);
+
 function persist(): void {
   clearTimeout(saveTimer);
   if (!dirty) return;
@@ -382,6 +404,7 @@ function persist(): void {
   indicator.classList.toggle('error', !ok);
   if (ok && !persistAsked) void requestPersistence();
   renderDataPanel();
+  cloudSync?.queue(current);
 }
 
 function scheduleSave(): void {
@@ -414,7 +437,7 @@ function issueCurrent(): void {
   if (isLocked(s)) return;
   const title = DOC_TITLES[s.docType].toLowerCase();
   let number = s.meta.number.trim();
-  if (!number) number = nextNumber(s.docType, invoices, s.id);
+  if (!number) number = nextNumber(s.docType, invoices, s.id, prefixes);
   const dup = findDuplicate({ ...s, meta: { ...s.meta, number } }, invoices);
   if (dup) {
     showToast(`Number ${number} is already used by another ${title}. Change it before issuing.`, 'error');
@@ -1008,5 +1031,21 @@ renderAll(store.get());
 renderClientPicker();
 renderDataPanel();
 void requestPersistence(invoices.length > 0);
+
+byId('dashboardLink').hidden = !cloudConfig;
+void cloudSync?.openFromUrl().then((doc) => {
+  if (!doc) return;
+  invoices = [doc, ...invoices.filter((i) => i.id !== doc.id)];
+  saveInvoices(invoices);
+  load(doc);
+  showToast(`Opened #${doc.meta.number} from the cloud`);
+});
+void cloudSync?.clientFromUrl().then((client) => {
+  if (!client) return;
+  const inv = freshInvoice();
+  inv.client = client;
+  load(inv);
+  showToast(`New invoice for ${client.company || client.name}`);
+});
 initPwa();
 if (MOBILE.matches) switchTab('colDetails');

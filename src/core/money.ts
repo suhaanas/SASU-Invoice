@@ -91,3 +91,19 @@ export function formatMoney(minor: number, currency: string, locale: string): st
 export function formatNumber(value: number, locale: string, maxDigits = 2): string {
   return new Intl.NumberFormat(locale, { maximumFractionDigits: maxDigits }).format(value);
 }
+
+/**
+ * Parse an amount typed by a person ("1,234.5", "1234.50", "¥1200") into
+ * integer minor units without going through floating point. Returns null when
+ * the text isn't a plain non-negative amount with at most the currency's
+ * number of decimals. Commas are treated as thousands separators.
+ */
+export function parseAmount(input: string, currency: string): number | null {
+  const digits = currencyDigits(currency);
+  const s = input.trim().replace(/^[^\d.-]+/, '').replace(/,/g, '');
+  const m = /^(\d{1,13})(?:\.(\d*))?$/.exec(s);
+  if (!m) return null;
+  const [, whole = '0', frac = ''] = m;
+  if (frac.length > digits) return null;
+  return Number(whole) * 10 ** digits + Number(frac.padEnd(digits, '0') || '0');
+}

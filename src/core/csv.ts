@@ -2,9 +2,9 @@
  * CSV export for accountants: one row per line item, invoice columns repeated.
  * Amounts are plain decimals (no currency symbol or grouping).
  */
-import { computeTotals } from './calc';
-import { currencyDigits, fromMinor } from './money';
-import { supplyDate, type InvoiceState } from './state';
+import { computeTotals } from './calc.ts';
+import { currencyDigits, fromMinor } from './money.ts';
+import { supplyDate, type InvoiceState } from './state.ts';
 
 /**
  * Quote a CSV field (RFC 4180) and neutralise spreadsheet formulas: a cell
