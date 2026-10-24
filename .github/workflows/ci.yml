@@ -25,6 +25,42 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm audit signatures
       - run: npm run lint
+      - run: npm run functions:check
       - run: npm test
       - run: npm run build
       - run: npm audit --omit=dev --audit-level=high
+
+  functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+      # Deno from npm's official package, pinned to an exact version.
+      - working-directory: supabase/functions
+        run: |
+          npx --yes deno@2.9.6 test --allow-env --frozen
+          npx --yes deno@2.9.6 check --frozen */index.ts
+
+  database:
+    runs-on: ubuntu-latest
+    # Plain PostgreSQL with Supabase's auth/storage schemas emulated
+    # (supabase/tests/supabase_stub.sql). No secrets involved.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - run: bash supabase/tests/run-local.sh
+        env:
+          PG_ADMIN_URL: postgres://postgres:postgres@localhost:5432/postgres

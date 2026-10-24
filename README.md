@@ -79,11 +79,28 @@ Netlify builds with `npm run build` and publishes `dist/` (configured in `netlif
 src/
   core/      pure logic: state, money, calc, dates, validation, storage, suggestions
   ui/        DOM rendering, line items, exports (PDF/PNG), logo processing
+  cloud/     Supabase client, cloud document API, browser cloud preferences
+  dashboard/ React cloud dashboard (served at /dashboard/)
+  editor/    editor add-ons: catalogue, PWA, optional cloud sync
   styles/    app and landing stylesheets
   main-app.ts       editor entry
   main-landing.ts   landing page entry
+supabase/
+  migrations/  database schema, row-level security and RPCs
+  functions/   Edge Functions (invoices: validated, server-computed saves)
+  tests/       SQL security tests (run on plain PostgreSQL)
 tests/       Vitest unit and XSS regression tests
 ```
+
+## Cloud workspace (beta)
+
+Optional accounts add cloud storage, organizations and teams on top of the free editor. Nothing changes for people who don't sign in, and the editor only saves to the cloud once you turn that on for your browser.
+
+- **Stack:** Supabase (Postgres with row-level security, Auth, Storage, Edge Functions) and a React dashboard.
+- **Set up:** copy `.env.example` to `.env.local` and fill in your Supabase project's URL and anon key. Without them the build still works and the dashboard reports that cloud features are off.
+- **Tests:** `npm run test:functions` (Deno) and `PG_ADMIN_URL=postgres://postgres@localhost:5432/postgres npm run test:db` (any scratch PostgreSQL 15+ server; it creates and drops a `sasu_test` database).
+
+Architecture, data model, security model, deployment steps and roadmap: [docs/architecture/saas.md](docs/architecture/saas.md).
 
 ## What SASU Invoice doesn't do
 
