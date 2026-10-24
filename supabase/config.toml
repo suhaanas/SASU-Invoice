@@ -1,0 +1,69 @@
+# Supabase CLI configuration. Auth settings here are pushed to the hosted
+# project with `supabase config push`; keep them in sync with the dashboard.
+project_id = "sasu-invoice"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 17
+
+[auth]
+enabled = true
+# Where email links (confirm, reset, invite sign-up) send people.
+site_url = "https://sasuinvoice.netlify.app/dashboard/"
+additional_redirect_urls = [
+  "https://sasuinvoice.netlify.app/dashboard/**",
+  "http://localhost:5173/dashboard/**",
+  "http://localhost:4173/dashboard/**",
+]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+minimum_password_length = 10
+password_requirements = "letters_digits"
+
+[auth.rate_limit]
+email_sent = 4
+sign_in_sign_ups = 30
+token_verifications = 30
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+double_confirm_changes = true
+secure_password_change = true
+max_frequency = "60s"
+
+[functions.invoices]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/invoices/index.ts"
+
+[functions.send-email]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/send-email/index.ts"
+
+[functions.ai-assistant]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/ai-assistant/index.ts"
+
+# Called by pg_cron with WORKER_SECRET, not a user JWT.
+[functions.reminder-worker]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/reminder-worker/index.ts"
+
+# Called by Resend; authenticated by its Svix signature.
+[functions.email-webhook]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/email-webhook/index.ts"
