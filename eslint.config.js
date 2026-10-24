@@ -1,9 +1,10 @@
 import js from '@eslint/js';
+import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', '.kilo'] },
+  { ignores: ['dist', 'node_modules', '.kilo', 'supabase/functions/_shared/core'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -17,19 +18,46 @@ export default tseslint.config(
         { property: 'insertAdjacentHTML', message: 'Use createElement instead.' },
         // jsPDF APIs behind the 2025–26 advisories (see docs/research-report.md).
         { property: 'addJS', message: 'jsPDF addJS is banned (script injection advisories).' },
-        { property: 'createAnnotation', message: 'jsPDF createAnnotation is banned (injection advisory).' },
+        {
+          property: 'createAnnotation',
+          message: 'jsPDF createAnnotation is banned (injection advisory).',
+        },
         { property: 'addSvgAsImage', message: 'jsPDF addSvgAsImage is banned (ReDoS advisory).' },
         { property: 'AcroForm', message: 'jsPDF AcroForm is banned (injection advisories).' },
         { property: 'html', message: 'jsPDF html() is banned; build PDFs from state instead.' },
       ],
       'no-restricted-syntax': [
         'error',
-        { selector: "CallExpression[callee.property.name='write'][callee.object.name='document']", message: 'document.write is banned.' },
+        {
+          selector: "CallExpression[callee.property.name='write'][callee.object.name='document']",
+          message: 'document.write is banned.',
+        },
       ],
       'no-eval': 'error',
       'no-implied-eval': 'error',
       'no-new-func': 'error',
     },
+  },
+  {
+    files: ['src/dashboard/**/*.tsx'],
+    ...reactHooks.configs.flat['recommended-latest'],
+  },
+  {
+    files: ['**/*.tsx'],
+    rules: {
+      // Same XSS rule as innerHTML, for React.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
+          message: 'Render text, never HTML.',
+        },
+      ],
+    },
+  },
+  {
+    files: ['scripts/**', 'vite.config.ts'],
+    languageOptions: { globals: { ...globals.node } },
   },
   {
     files: ['tests/**'],

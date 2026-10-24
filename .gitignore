@@ -6,3 +6,8 @@ dist
 .kilo
 research_notes
 reports
+.env
+.env.*
+!.env.example
+supabase/.temp
+supabase/.branches

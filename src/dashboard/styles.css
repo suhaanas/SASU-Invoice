@@ -1,0 +1,48 @@
+@import 'tailwindcss';
+
+/* Brand tokens shared with the editor (src/styles/app.css). */
+@theme {
+  --color-canvas: #f4f5f7;
+  --color-paper: #ffffff;
+  --color-ink: #16181d;
+  --color-graphite: #5a606b;
+  --color-faint: #8a909b;
+  --color-rule: #e2e5ea;
+  --color-field: #d9dde3;
+  --color-hover: #f2f3f6;
+  --color-brand: #5b5ef4;
+  --color-brand-ink: #3f42d6;
+  --color-brand-wash: #eef0ff;
+  --color-danger: #c2334d;
+  --color-danger-wash: #fdf0f2;
+  --color-ok: #17803d;
+  --color-ok-wash: #ecf8f0;
+  --color-warn: #a15c07;
+  --color-warn-wash: #fff6e6;
+  --font-sans: 'DM Sans Variable', 'DM Sans', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+}
+
+@layer base {
+  html,
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

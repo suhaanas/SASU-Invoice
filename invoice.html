@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Invoice | SASU Invoice</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script type="module" src="/src/main-view.ts"></script>
+</head>
+
+<body>
+    <main class="view-wrap">
+        <a class="view-brand" href="/" aria-label="SASU Invoice">
+            <svg width="20" height="20" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                <rect width="22" height="22" rx="6" fill="#16181D" />
+                <path d="M6 7h10M6 11h7M6 15h5" stroke="#fff" stroke-width="2" stroke-linecap="round" />
+                <circle cx="17" cy="15" r="3" fill="#5B5EF4" />
+            </svg>
+            Sent with SASU Invoice
+        </a>
+        <div id="view" aria-live="polite">
+            <div class="view-card view-message">
+                <p>Loading invoice…</p>
+            </div>
+        </div>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+
+</html>

@@ -5,10 +5,16 @@
 [build.environment]
   NODE_VERSION = "24"
 
+# The dashboard is a client-routed SPA.
+[[redirects]]
+  from = "/dashboard/*"
+  to = "/dashboard.html"
+  status = 200
+
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://api.producthunt.com; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none'; upgrade-insecure-requests"
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://api.producthunt.com https://*.supabase.co; font-src 'self' data:; connect-src 'self' data: blob: https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none'; upgrade-insecure-requests"
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
     Referrer-Policy = "strict-origin-when-cross-origin"
@@ -16,6 +22,14 @@
     Cross-Origin-Opener-Policy = "same-origin"
     Cross-Origin-Resource-Policy = "same-origin"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+
+# Client invoice view: never indexed, never leaks its URL.
+[[headers]]
+  for = "/invoice.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
 
 [[headers]]
   for = "/assets/*"
