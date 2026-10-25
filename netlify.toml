@@ -2,7 +2,8 @@
   command = "npm run build"
   publish = "dist"
 
-# Production deploys must have the cloud configured (see scripts/check-env.mjs).
+# Production build guard (scripts/check-env.mjs): blocks VITE_* secrets always,
+# and missing cloud settings once REQUIRE_CLOUD=1 is set in Netlify.
 [context.production]
   command = "npm run check:env && npm run build"
 

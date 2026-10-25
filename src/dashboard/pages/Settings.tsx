@@ -620,10 +620,14 @@ export function TeamPage() {
             <ul className="divide-y divide-rule">
               {members.data.map((m) => {
                 const self = m.user_id === user!.id;
+                // The last owner can't leave or be removed (the database refuses it too).
+                const lastOwner =
+                  m.role === 'owner' && members.data.filter((x) => x.role === 'owner').length === 1;
                 const canRemove =
-                  self ||
-                  active.role === 'owner' ||
-                  (active.role === 'admin' && m.role === 'member');
+                  !lastOwner &&
+                  (self ||
+                    active.role === 'owner' ||
+                    (active.role === 'admin' && m.role === 'member'));
                 return (
                   <li key={m.user_id} className="flex flex-wrap items-center gap-3 px-5 py-3">
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-hover text-xs font-bold uppercase">

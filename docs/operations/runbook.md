@@ -18,8 +18,9 @@ Keep the two Supabase projects fully separate: different keys, different Vault
 secrets, different Paddle price ids (`supabase/setup/billing-prices.sql`). In
 Netlify, set the `VITE_*` variables per deploy context so previews point at
 staging and production points at production. Production builds run
-`npm run check:env` first and fail if the cloud configuration is missing or a
-server secret is about to be bundled.
+`npm run check:env` first: it always fails if a server secret is about to be
+bundled, and, once you set `REQUIRE_CLOUD=1` in Netlify, also if the cloud
+configuration is missing.
 
 ## First deploy (per environment)
 
@@ -48,7 +49,8 @@ Work through these in order. Everything marked **secret** goes into
 8. **AI (optional).** Set `OPENAI_API_KEY` (**secret**) and `OPENAI_MODEL` (a current
    model with structured outputs). Set a monthly budget in the OpenAI dashboard.
 9. **Website.** In Netlify set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
-   `VITE_PADDLE_CLIENT_TOKEN`, `VITE_PADDLE_ENV` and deploy.
+   `VITE_PADDLE_CLIENT_TOKEN`, `VITE_PADDLE_ENV`, and `REQUIRE_CLOUD=1` for the
+   production context, then deploy.
 10. **Admins.** Run `supabase/setup/platform-admin.sql` for each platform admin.
 11. **Smoke test** (staging first): register, confirm email, onboard, create an
     invoice with cloud saving on, record a payment, share the link, send an

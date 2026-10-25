@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 /**
- * Fails a production build that is missing cloud configuration, so a deploy
- * can't silently ship with accounts switched off. Local and preview builds
- * don't run this (the editor works without any configuration).
+ * Production build guard.
+ *   - Always: refuses server secrets named VITE_* (they would be bundled).
+ *   - With REQUIRE_CLOUD=1 (set in Netlify once the cloud workspace goes
+ *     live): fails if the Supabase/Paddle configuration is missing or wrong,
+ *     so a deploy can't silently ship with accounts switched off.
+ * Without REQUIRE_CLOUD the site builds as the local-only editor, as before.
  *
  *   node scripts/check-env.mjs
  */
@@ -18,7 +21,8 @@ const optional = {
 };
 
 const problems = [];
-for (const [name, check] of Object.entries(required)) {
+const requireCloud = process.env.REQUIRE_CLOUD === '1';
+for (const [name, check] of Object.entries(requireCloud ? required : {})) {
   const value = process.env[name];
   if (!value) problems.push(`${name} is not set`);
   else if (check(value) !== true) problems.push(`${name} ${check(value)}`);
@@ -45,4 +49,8 @@ if (problems.length) {
   console.error('Environment check failed:\n  - ' + problems.join('\n  - '));
   process.exit(1);
 }
-console.log('Environment check passed.');
+console.log(
+  requireCloud
+    ? 'Environment check passed (cloud required).'
+    : 'Environment check passed (cloud not required; set REQUIRE_CLOUD=1 to enforce).',
+);
