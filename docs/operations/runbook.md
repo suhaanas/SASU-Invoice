@@ -24,6 +24,16 @@ configuration is missing.
 
 ## First deploy (per environment)
 
+**Automated path:** create a Supabase personal access token (Account → Access
+Tokens), put `SUPABASE_ACCESS_TOKEN=…` in `.env.local`, and run
+`scripts/setup-supabase.sh` (set `PROJECT_NAME=sasu-production` for
+production). It does steps 1–6 below: creates the project (London, smallest
+size), writes the keys to `.env.local`, applies migrations, sets function
+secrets (including any Resend/Paddle/OpenAI keys already in `.env.local`),
+deploys all functions without Docker, pushes auth settings and schedules the
+worker. It is safe to re-run after adding more keys. The manual steps are
+below for reference.
+
 Work through these in order. Everything marked **secret** goes into
 `supabase secrets set`, never into Netlify or a `VITE_` variable.
 
