@@ -138,3 +138,23 @@ test('terms, privacy and refund policies are linked from the landing and pricing
   await page.goto('/refunds.html');
   await expect(page.getByText('14 days', { exact: true })).toBeVisible();
 });
+
+test('search and AI metadata: FAQ schema matches the page, llms.txt and social image', async ({
+  page,
+  request,
+}) => {
+  await page.goto('/');
+  const graph = JSON.parse(
+    (await page.locator('script[type="application/ld+json"]').first().textContent()) ?? '{}',
+  ) as { '@graph': { '@type': string; mainEntity?: { name: string }[] }[] };
+  const faq = graph['@graph'].find((n) => n['@type'] === 'FAQPage');
+  const visible = await page.locator('#faq summary').allTextContents();
+  expect(faq?.mainEntity?.map((q) => q.name)).toEqual(visible.map((t) => t.trim()));
+  expect(graph['@graph'].some((n) => n['@type'] === 'SoftwareApplication')).toBe(true);
+
+  const llms = await request.get('/llms.txt');
+  expect(llms.ok()).toBe(true);
+  expect(await llms.text()).toContain('# SASU Invoice');
+  const og = await request.get('/images/og-image.jpg');
+  expect(og.headers()['content-type']).toContain('image/jpeg');
+});

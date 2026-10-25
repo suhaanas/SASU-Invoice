@@ -7,13 +7,12 @@
     <meta name="theme-color" content="#f4f5f7" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-readable summary" />
 
     <!-- SEO & Meta Tags -->
     <title>SASU Invoice | Free Online Invoice Generator & PDF Maker</title>
     <meta name="description"
-        content="Create a professional invoice in minutes and download it as a clean, multi-page PDF. Free, no sign-up, and nothing you type leaves your browser." />
-    <meta name="keywords"
-        content="invoice generator, create invoice, free invoice maker, online invoice, PDF invoice, invoice templates, billing software, SASU invoice" />
+        content="Free online invoice generator: create a professional invoice and download a clean PDF in minutes, no sign-up. Upgrade for cloud invoices, client tracking and automatic payment reminders." />
     <meta name="author" content="Suha Anas" />
     <link rel="canonical" href="https://sasuinvoice.netlify.app/" />
 
@@ -22,7 +21,12 @@
     <meta property="og:url" content="https://sasuinvoice.netlify.app/" />
     <meta property="og:title" content="SASU Invoice | Free Online Invoice Generator" />
     <meta property="og:description"
-        content="Create stunning professional invoices in seconds. Export as PDF, PNG or print with one click. Free, no sign-up required." />
+        content="Create a professional invoice and download a clean PDF in minutes. Free, no sign-up. Cloud invoicing and automatic payment reminders when you need them." />
+    <meta property="og:site_name" content="SASU Invoice" />
+    <meta property="og:locale" content="en_GB" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="SASU Invoice: invoices out the door, payments in the bank. Dashboard preview." />
     <meta property="og:image" content="https://sasuinvoice.netlify.app/images/og-image.jpg" />
 
     <!-- Twitter -->
@@ -30,36 +34,200 @@
     <meta name="twitter:url" content="https://sasuinvoice.netlify.app/" />
     <meta name="twitter:title" content="SASU Invoice | Free Online Invoice Generator" />
     <meta name="twitter:description"
-        content="Create stunning professional invoices in seconds. Export as PDF, PNG or print with one click. Free, no sign-up required." />
+        content="Create a professional invoice and download a clean PDF in minutes. Free, no sign-up. Cloud invoicing and automatic payment reminders when you need them." />
     <meta name="twitter:image" content="https://sasuinvoice.netlify.app/images/og-image.jpg" />
 
     <!-- JSON-LD Schema Markup -->
     <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
     {
-      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://sasuinvoice.netlify.app/#org",
+      "name": "SASU Invoice",
+      "url": "https://sasuinvoice.netlify.app/",
+      "logo": "https://sasuinvoice.netlify.app/icons/icon-512.png",
+      "email": "suhaanas2025@gmail.com",
+      "founder": {
+        "@type": "Person",
+        "name": "Suha Anas"
+      },
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "LK"
+      },
+      "areaServed": "Worldwide",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "email": "suhaanas2025@gmail.com",
+        "availableLanguage": [
+          "English"
+        ]
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://sasuinvoice.netlify.app/#website",
+      "name": "SASU Invoice",
+      "url": "https://sasuinvoice.netlify.app/",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://sasuinvoice.netlify.app/#org"
+      }
+    },
+    {
       "@type": "SoftwareApplication",
+      "@id": "https://sasuinvoice.netlify.app/#app",
       "name": "SASU Invoice",
       "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Web",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
+      "applicationSubCategory": "Invoicing software",
+      "operatingSystem": "Web browser",
+      "url": "https://sasuinvoice.netlify.app/",
+      "image": "https://sasuinvoice.netlify.app/images/og-image.jpg",
+      "description": "Free online invoice generator with PDF export, plus an optional cloud workspace for clients, payment tracking, team members and automatic payment reminders (RecoverFlow).",
+      "publisher": {
+        "@id": "https://sasuinvoice.netlify.app/#org"
       },
-      "description": "SASU Invoice lets you create stunning professional invoices in seconds. Export as PDF, PNG or print with one click.",
-      "url": "https://sasuinvoice.netlify.app",
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Free editor",
+          "price": "0",
+          "priceCurrency": "USD",
+          "url": "https://sasuinvoice.netlify.app/app"
+        },
+        {
+          "@type": "Offer",
+          "name": "Pro",
+          "price": "12",
+          "priceCurrency": "USD",
+          "url": "https://sasuinvoice.netlify.app/pricing",
+          "priceSpecification": {
+            "@type": "UnitPriceSpecification",
+            "price": "12",
+            "priceCurrency": "USD",
+            "billingDuration": "P1M",
+            "unitText": "month"
+          }
+        },
+        {
+          "@type": "Offer",
+          "name": "Business",
+          "price": "29",
+          "priceCurrency": "USD",
+          "url": "https://sasuinvoice.netlify.app/pricing",
+          "priceSpecification": {
+            "@type": "UnitPriceSpecification",
+            "price": "29",
+            "priceCurrency": "USD",
+            "billingDuration": "P1M",
+            "unitText": "month"
+          }
+        }
+      ],
       "featureList": [
-        "Live Preview",
-        "PDF Export",
-        "PNG Export",
-        "Print Ready",
-        "Multi-Currency",
-        "Autosave and Saved Invoices",
-        "Color Themes",
-        "Smart Suggestions",
-        "Logo Customization"
+        "Live invoice preview",
+        "Vector multi-page PDF and PNG export",
+        "Quotes, credit notes, receipts and proformas",
+        "13 currencies and 8 number formats",
+        "Tax IDs and legal footers",
+        "Cloud workspace with clients and payment tracking",
+        "Automatic email payment reminders",
+        "Recurring invoices",
+        "Reports with CSV export",
+        "Team members with permissions"
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://sasuinvoice.netlify.app/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is SASU Invoice?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "SASU Invoice is an online invoice generator for freelancers and small businesses. You fill in a short form, see the invoice build beside it, and download a clean, multi-page PDF. An optional cloud workspace adds client tracking, payment recording and automatic payment reminders."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is SASU Invoice free?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The invoice editor is free forever with no account and no time limit. Paid plans (Pro at $12 a month and Business at $29 a month) are only for the cloud workspace, and every new workspace starts with a 14-day Pro trial with no card needed."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need an account to make an invoice?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Open the editor, fill it in and download the PDF. You only create an account if you want invoices saved in the cloud, shared with your team, or followed up automatically."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where are my invoices stored?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "In the free editor, invoices are kept in your browser’s local storage on this device and never uploaded. Clearing your browser’s site data deletes them, so download a backup now and then. Invoices you save to a cloud workspace are stored on our servers in London."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use it on another device?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Choose Download backup in the editor’s Your data panel, then use Import backup on the other device. With a cloud workspace your invoices are available on any device after you sign in."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can SASU Invoice chase unpaid invoices for me?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, with a cloud workspace. RecoverFlow sends polite payment reminders by email on the schedule you choose and stops as soon as you record the payment."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which currencies can I use?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "13 currencies, including US dollars, euros, pounds, rupees, yen and Sri Lankan rupees, each formatted the way that country expects."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I make quotes and credit notes?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Switch the document type to a quote, credit note, receipt or proforma. A quote turns into an invoice in one click, and a credit note links back to the invoice it corrects."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I add my VAT or company number?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Add your tax ID, your client’s tax ID and a legal footer such as a VAT exemption note."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does it send e-invoices for me?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. SASU Invoice is not a French approved e-invoicing platform (PA) or a Peppol access point, and it isn’t a legal archive, so keep your own copies. When e-invoicing becomes mandatory for your business, send through your platform or accountant."
+          }
+        }
       ]
     }
+  ]
+}
     </script>
 
     <script type="module" src="/src/main-landing.ts"></script>
@@ -83,12 +251,16 @@
                 <ul class="nav-links">
                     <li><a href="#features">Features</a></li>
                     <li><a href="#how">How it works</a></li>
+                    <li><a href="#workspace">Cloud workspace</a></li>
                     <li><a href="#privacy">Privacy</a></li>
                     <li><a href="#faq">FAQ</a></li>
                     <li><a href="/pricing.html">Pricing</a></li>
                 </ul>
             </nav>
-            <a href="/app.html" class="btn btn-ink btn-sm">Open the editor</a>
+            <div class="nav-actions">
+                <a href="/dashboard/login" class="nav-signin">Sign in</a>
+                <a href="/app.html" class="btn btn-ink btn-sm">Open the editor</a>
+            </div>
         </div>
     </header>
 
@@ -105,6 +277,8 @@
                         <a href="/app.html" class="btn btn-primary">Create an invoice</a>
                         <a href="#how" class="btn btn-quiet">See how it works</a>
                     </div>
+                    <p class="hero-upsell">Need reminders, clients and a team? <a href="#workspace">See the cloud
+                            workspace</a></p>
                     <dl class="facts">
                         <div><dt><span data-fact="currencies">13</span></dt><dd>currencies</dd></div>
                         <div><dt><span data-fact="locales">8</span></dt><dd>number formats</dd></div>
@@ -244,13 +418,61 @@
         </section>
 
         <!-- Privacy -->
+        <!-- Cloud workspace -->
+        <section class="workspace" id="workspace" tabindex="-1" aria-labelledby="workspace-title">
+            <div class="wrap">
+                <div class="workspace-head">
+                    <p class="workspace-eyebrow">Cloud workspace · RecoverFlow</p>
+                    <h2 id="workspace-title" class="section-title">When invoices pile up, get paid without chasing.</h2>
+                    <p class="workspace-lede">Keep using the free editor for one-off invoices. When you need more, a
+                        workspace keeps every invoice, client and payment in one place, and follows up on late
+                        payments for you.</p>
+                </div>
+                <figure class="workspace-shot">
+                    <div class="workspace-bar" aria-hidden="true"><i></i><i></i><i></i></div>
+                    <img src="/src/dashboard/assets/product-overview.webp" width="1600" height="900" loading="lazy"
+                        decoding="async"
+                        alt="The SASU Invoice dashboard: totals invoiced, paid and outstanding, a chart of invoiced against received, and unpaid balances by age." />
+                </figure>
+                <ul class="workspace-points">
+                    <li>
+                        <h3>See what’s owed at a glance</h3>
+                        <p>Outstanding, overdue and paid totals, unpaid balances by age, and every payment you record.</p>
+                    </li>
+                    <li>
+                        <h3>Automatic payment reminders</h3>
+                        <p>RecoverFlow emails polite reminders on your schedule and stops the moment an invoice is paid.</p>
+                    </li>
+                    <li>
+                        <h3>Clients, share links and recurring invoices</h3>
+                        <p>Send a secure link to view an invoice, and let monthly invoices create themselves.</p>
+                    </li>
+                    <li>
+                        <h3>Your team, with the right access</h3>
+                        <p>On Business, invite up to 5 people, such as your accountant or staff, with roles and permissions.</p>
+                    </li>
+                </ul>
+                <div class="workspace-plans" aria-label="Plans">
+                    <div class="plan-chip"><span>Free</span><strong>$0</strong><small>Invoice editor, forever</small></div>
+                    <div class="plan-chip is-featured"><span>Pro</span><strong>$12<em>/month</em></strong><small>Cloud invoices, clients, reminders</small></div>
+                    <div class="plan-chip"><span>Business</span><strong>$29<em>/month</em></strong><small>Teams, permissions, higher limits</small></div>
+                    <div class="workspace-cta">
+                        <a href="/dashboard/register" class="btn btn-primary">Start 14-day free trial</a>
+                        <a href="/pricing.html" class="btn btn-quiet">Compare plans</a>
+                        <p>No card needed. Prices exclude tax.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section class="privacy" id="privacy" tabindex="-1" aria-labelledby="privacy-title">
             <div class="wrap privacy-grid">
                 <div>
                     <h2 id="privacy-title" class="section-title">Your invoices stay on your computer</h2>
-                    <p>SASU Invoice has no accounts and no database. What you type is kept in your browser’s own
-                        storage and every export is generated on your device.</p>
-                    <p>To move to another computer, download a backup file from the editor and import it there.</p>
+                    <p>The free editor needs no account and has no database. What you type is kept in your
+                        browser’s own storage and every export is generated on your device.</p>
+                    <p>To move to another computer, download a backup file from the editor and import it there. If
+                        you later want invoices in the cloud, a workspace is opt-in and you choose what to upload.</p>
                 </div>
                 <div class="ledger" role="table" aria-label="What the editor sends while you work">
                     <div class="ledger-head" role="row">
@@ -275,7 +497,8 @@
                         their servers.</p>
                     <p>So this is the tool I wanted: open it, fill it in, and send a PDF that looks like it came from a
                         proper business. No sign-up, and no copy of your data anywhere but your own browser.</p>
-                    <p>If something is missing or wrong, open an issue on GitHub. I read every one.</p>
+                    <p>If something is missing or wrong, email <a href="mailto:suhaanas2025@gmail.com">suhaanas2025@gmail.com</a>.
+                        I read every message.</p>
                     <footer class="signoff">
                         <span class="signoff-name">Suha Anas</span>
                         <span class="signoff-role">Maker of SASU Invoice</span>
@@ -290,23 +513,28 @@
                 <h2 id="faq-title" class="section-title">Questions</h2>
                 <div class="faq-list">
                     <details>
-                        <summary>Is it really free?</summary>
-                        <p>Yes. There’s no paid plan, no trial and no account.</p>
+                        <summary>What is SASU Invoice?</summary>
+                        <p>SASU Invoice is an online invoice generator for freelancers and small businesses. You fill in a short form, see the invoice build beside it, and download a clean, multi-page PDF. An optional cloud workspace adds client tracking, payment recording and automatic payment reminders.</p>
+                    </details>
+                    <details>
+                        <summary>Is SASU Invoice free?</summary>
+                        <p>Yes. The invoice editor is free forever with no account and no time limit. Paid plans (Pro at $12 a month and Business at $29 a month) are only for the cloud workspace, and every new workspace starts with a 14-day Pro trial with no card needed.</p>
+                    </details>
+                    <details>
+                        <summary>Do I need an account to make an invoice?</summary>
+                        <p>No. Open the editor, fill it in and download the PDF. You only create an account if you want invoices saved in the cloud, shared with your team, or followed up automatically.</p>
                     </details>
                     <details>
                         <summary>Where are my invoices stored?</summary>
-                        <p>In your browser’s local storage on this device. Clearing your browser’s site data deletes
-                            them, so download a backup now and then.</p>
+                        <p>In the free editor, invoices are kept in your browser’s local storage on this device and never uploaded. Clearing your browser’s site data deletes them, so download a backup now and then. Invoices you save to a cloud workspace are stored on our servers in London.</p>
                     </details>
                     <details>
                         <summary>Can I use it on another device?</summary>
-                        <p>Yes. Choose Download backup in the editor’s Your data panel, then use Import backup on the
-                            other device.</p>
+                        <p>Yes. Choose Download backup in the editor’s Your data panel, then use Import backup on the other device. With a cloud workspace your invoices are available on any device after you sign in.</p>
                     </details>
                     <details>
-                        <summary>Is the Suggest button AI?</summary>
-                        <p>No. It matches your words against a built-in library of professional phrasings. Nothing you
-                            type is sent anywhere.</p>
+                        <summary>Can SASU Invoice chase unpaid invoices for me?</summary>
+                        <p>Yes, with a cloud workspace. RecoverFlow sends polite payment reminders by email on the schedule you choose and stops as soon as you record the payment.</p>
                     </details>
                     <details>
                         <summary>Which currencies can I use?</summary>
@@ -314,21 +542,16 @@
                             rupees, yen and Sri Lankan rupees, each formatted the way that country expects.</p>
                     </details>
                     <details>
-                        <summary>Does it send e-invoices for me?</summary>
-                        <p>No. SASU Invoice creates your documents but doesn’t send them anywhere. It isn’t a French
-                            approved e-invoicing platform (PA) or a Peppol access point, and it isn’t a legal archive, so
-                            keep your own copies. When e-invoicing becomes mandatory for your business, send through
-                            your platform or accountant.</p>
-                    </details>
-                    <details>
                         <summary>Can I make quotes and credit notes?</summary>
-                        <p>Yes. Switch the document type to a quote, credit note, receipt or proforma. A quote turns into
-                            an invoice in one click, and a credit note links back to the invoice it corrects.</p>
+                        <p>Yes. Switch the document type to a quote, credit note, receipt or proforma. A quote turns into an invoice in one click, and a credit note links back to the invoice it corrects.</p>
                     </details>
                     <details>
                         <summary>Can I add my VAT or company number?</summary>
-                        <p>Yes. Add your tax ID, your client’s tax ID and a legal footer such as a VAT exemption note.
-                        </p>
+                        <p>Yes. Add your tax ID, your client’s tax ID and a legal footer such as a VAT exemption note.</p>
+                    </details>
+                    <details>
+                        <summary>Does it send e-invoices for me?</summary>
+                        <p>No. SASU Invoice is not a French approved e-invoicing platform (PA) or a Peppol access point, and it isn’t a legal archive, so keep your own copies. When e-invoicing becomes mandatory for your business, send through your platform or accountant.</p>
                     </details>
                 </div>
             </div>
