@@ -31,8 +31,12 @@ production). It does steps 1–6 below: creates the project (London, smallest
 size), writes the keys to `.env.local`, applies migrations, sets function
 secrets (including any Resend/Paddle/OpenAI keys already in `.env.local`),
 deploys all functions without Docker, pushes auth settings and schedules the
-worker. It is safe to re-run after adding more keys. The manual steps are
-below for reference.
+worker. It is safe to re-run after adding more keys. If you're already signed
+in with `supabase login`, no token is needed. Then run `npm run smoke:live`:
+it exercises sign-in, organizations, saving/issuing, payments, share links and
+tenant isolation against the real project with throwaway users, and cleans up.
+Also run `supabase db advisors --linked`; the only expected warnings are the
+intentional user/anon RPCs. The manual steps are below for reference.
 
 Work through these in order. Everything marked **secret** goes into
 `supabase secrets set`, never into Netlify or a `VITE_` variable.

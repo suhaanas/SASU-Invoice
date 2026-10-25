@@ -8,7 +8,7 @@
  *   analyze_reply       { orgId, text }                    → analysis (intent, dispute, date…)
  *   explain_outstanding { orgId, currency }                → { summary, highlights }
  */
-import { z } from 'zod';
+import { z } from 'npm:zod@4.6.5';
 import {
   EMAIL_KIND_LABELS,
   EMAIL_KINDS,

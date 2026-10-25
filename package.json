@@ -24,7 +24,9 @@
     "test:db": "bash supabase/tests/run-local.sh",
     "build:e2e": "VITE_SUPABASE_URL=https://e2e-placeholder.supabase.co VITE_SUPABASE_ANON_KEY=e2e-placeholder-anon-key vite build --outDir dist-e2e",
     "test:e2e": "playwright test",
-    "check:env": "node scripts/check-env.mjs"
+    "check:env": "node scripts/check-env.mjs",
+    "smoke:live": "node --env-file=.env.local scripts/live-smoke.mjs",
+    "setup:supabase": "bash scripts/setup-supabase.sh"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.3.0",

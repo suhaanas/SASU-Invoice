@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Set up (or update) a Supabase project for SASU Invoice, end to end.
 #
-#   Needs only a personal access token (supabase.com → Account → Access Tokens),
-#   in .env.local as SUPABASE_ACCESS_TOKEN=… or in the environment.
+#   Needs either an existing `supabase login` on this machine, or a personal
+#   access token in .env.local as SUPABASE_ACCESS_TOKEN=… (Account → Access Tokens).
 #
 #   scripts/setup-supabase.sh                 # create "sasu-staging" in London, or reuse SUPABASE_PROJECT_REF
 #   PROJECT_NAME=sasu-production scripts/setup-supabase.sh
@@ -28,9 +28,12 @@ if [[ -f $ENV_FILE ]]; then
   set +a
 fi
 
-[[ -n ${SUPABASE_ACCESS_TOKEN:-} ]] || die "Add SUPABASE_ACCESS_TOKEN=… to $ENV_FILE (supabase.com → Account → Access Tokens)."
-export SUPABASE_ACCESS_TOKEN
 command -v "$SB" >/dev/null || die "Supabase CLI not found (brew install supabase)."
+if [[ -n ${SUPABASE_ACCESS_TOKEN:-} ]]; then
+  export SUPABASE_ACCESS_TOKEN
+elif ! "$SB" projects list -o json >/dev/null 2>&1; then
+  die "Run 'supabase login', or add SUPABASE_ACCESS_TOKEN=… to $ENV_FILE (supabase.com → Account → Access Tokens)."
+fi
 command -v jq >/dev/null || die "jq not found (brew install jq)."
 
 PROJECT_NAME="${PROJECT_NAME:-sasu-staging}"
@@ -55,8 +58,8 @@ set_env() {
   export "$key=$value"
 }
 
-api() { # Supabase Management API
-  curl -fsS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H 'Content-Type: application/json' "$@"
+project_status() {
+  "$SB" projects list -o json | jq -r --arg r "$1" '.[] | select(.id==$r or .ref==$r) | .status'
 }
 
 # 1. Project -------------------------------------------------------------------------
@@ -81,7 +84,7 @@ export SUPABASE_DB_PASSWORD
 
 log "Waiting for project $REF to be ready…"
 for _ in $(seq 1 60); do
-  status=$(api "https://api.supabase.com/v1/projects/$REF" | jq -r '.status')
+  status=$(project_status "$REF")
   [[ $status == ACTIVE_HEALTHY ]] && break
   sleep 10
 done
@@ -124,7 +127,7 @@ log "Pushing auth settings from supabase/config.toml…"
 log "Scheduling the reminder / recurring worker…"
 sql=$(cat <<SQL
 create extension if not exists pg_cron;
-create extension if not exists pg_net;
+create extension if not exists pg_net with schema extensions;
 select vault.create_secret('https://$REF.supabase.co/functions/v1/reminder-worker', 'recoverflow_worker_url')
   where not exists (select 1 from vault.secrets where name = 'recoverflow_worker_url');
 select vault.create_secret('$WORKER_SECRET', 'recoverflow_worker_secret')
@@ -140,7 +143,7 @@ select cron.schedule('recoverflow-worker', '*/5 * * * *', \$cron\$
 \$cron\$);
 SQL
 )
-api -X POST "https://api.supabase.com/v1/projects/$REF/database/query" -d "$(jq -n --arg q "$sql" '{query: $q}')" >/dev/null
+"$SB" db query --linked "$sql" >/dev/null
 
 # 7. Health -------------------------------------------------------------------------------------------
 log "Checking the health endpoint…"

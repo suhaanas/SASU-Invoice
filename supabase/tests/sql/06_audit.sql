@@ -42,15 +42,24 @@ select tests.check(
     where n.nspname = 'public' and has_function_privilege('authenticated', p.oid, 'execute')
       and p.proname not in (select name from allowed_auth)), 'none'));
 
--- Every SECURITY DEFINER function pins its search_path (no schema hijacking).
+-- Every function in our schemas pins its search_path (no schema hijacking);
+-- this mirrors Supabase's function_search_path_mutable advisor.
 select tests.check(
   not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-              where n.nspname in ('public', 'app') and p.prosecdef
+              where n.nspname in ('public', 'app')
                 and not coalesce(array_to_string(p.proconfig, ',') like '%search_path=%', false)),
-  'security definer functions set search_path; missing on ' || coalesce((
+  'every function sets search_path; missing on ' || coalesce((
     select string_agg(n.nspname || '.' || p.proname, ', ') from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname in ('public', 'app') and p.prosecdef
+    where n.nspname in ('public', 'app')
       and not coalesce(array_to_string(p.proconfig, ',') like '%search_path=%', false)), 'none'));
+
+-- RLS policies call auth.uid() through a sub-select (evaluated once per query).
+select tests.check(
+  not exists (select 1 from pg_policies where schemaname = 'public'
+              and (coalesce(qual, '') ~* '(?<!select )auth\.uid\(\)' or coalesce(with_check, '') ~* '(?<!select )auth\.uid\(\)')),
+  'policies wrap auth.uid() in a sub-select; not on ' || coalesce((
+    select string_agg(tablename || '.' || policyname, ', ') from pg_policies where schemaname = 'public'
+      and (coalesce(qual, '') ~* '(?<!select )auth\.uid\(\)' or coalesce(with_check, '') ~* '(?<!select )auth\.uid\(\)')), 'none'));
 
 -- Anonymous visitors can read only the price list.
 select tests.check(

@@ -19,7 +19,10 @@ const check = process.argv.includes('--check');
 let stale = [];
 if (!check) mkdirSync(outDir, { recursive: true });
 for (const file of FILES) {
-  const expected = HEADER + readFileSync(resolve(root, 'src/core', file), 'utf8');
+  // Supabase's server-side bundler ignores import maps, so pin npm specifiers.
+  const expected =
+    HEADER +
+    readFileSync(resolve(root, 'src/core', file), 'utf8').replace(/from 'zod';/g, "from 'npm:zod@4.6.5';");
   const target = resolve(outDir, file);
   if (check) {
     if (!existsSync(target) || readFileSync(target, 'utf8') !== expected) stale.push(file);

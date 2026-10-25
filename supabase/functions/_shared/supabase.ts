@@ -3,7 +3,7 @@
  * service role bypasses RLS, so it only ever calls the service-only rf_ / save
  * RPCs, which re-check the caller's membership themselves.
  */
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.117.3';
 import type { SqlError } from './http.ts';
 
 export function requireEnv(name: string): string {

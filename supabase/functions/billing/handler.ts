@@ -10,7 +10,7 @@
  *
  * The plan shown in the app changes only when the provider's webhook confirms it.
  */
-import { z } from 'zod';
+import { z } from 'npm:zod@4.6.5';
 import { BillingError, type BillingProvider } from '../_shared/billing.ts';
 import { corsHeaders, json, tooManyRequests, sqlErrorResponse } from '../_shared/http.ts';
 import { overLimit, type Rpc } from '../_shared/supabase.ts';

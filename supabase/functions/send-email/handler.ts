@@ -6,7 +6,7 @@
  * `requestId` (a UUID made by the browser per click) is the idempotency key:
  * a double click or a network retry returns the first attempt's result.
  */
-import { z } from 'zod';
+import { z } from 'npm:zod@4.6.5';
 import {
   EMAIL_KINDS,
   MAX_BODY,

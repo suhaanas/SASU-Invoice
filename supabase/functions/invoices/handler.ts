@@ -11,7 +11,7 @@
  *
  * I/O is injected (`Deps`) so this module is unit-testable without a network.
  */
-import { z } from 'zod';
+import { z } from 'npm:zod@4.6.5';
 import { computeTotals } from '../_shared/core/calc.ts';
 import { invoiceSchema } from '../_shared/core/validate.ts';
 import type { InvoiceState } from '../_shared/core/state.ts';
