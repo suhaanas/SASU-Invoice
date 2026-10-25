@@ -64,3 +64,17 @@ jobs:
       - run: bash supabase/tests/run-local.sh
         env:
           PG_ADMIN_URL: postgres://postgres:postgres@localhost:5432/postgres
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --ignore-scripts
+      # GitHub's Ubuntu runners ship Google Chrome, which the tests use.
+      - run: npx playwright test

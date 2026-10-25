@@ -20,8 +20,8 @@ import {
   type EmailProvider,
   type SendContext,
 } from '../_shared/email.ts';
-import { corsHeaders, json, sqlErrorResponse } from '../_shared/http.ts';
-import type { Rpc } from '../_shared/supabase.ts';
+import { corsHeaders, json, tooManyRequests, sqlErrorResponse } from '../_shared/http.ts';
+import { overLimit, type Rpc } from '../_shared/supabase.ts';
 
 export interface Deps {
   allowedOrigins: string[];
@@ -51,6 +51,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   const token = /^Bearer (.+)$/.exec(req.headers.get('Authorization') ?? '')?.[1];
   const userId = token ? await deps.userFromToken(token) : null;
   if (!userId) return json(401, { error: 'Please sign in again', code: 'SA401' }, cors);
+  if (await overLimit(deps.rpc, `send-email:${userId}`, 20)) return tooManyRequests(cors);
 
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success)

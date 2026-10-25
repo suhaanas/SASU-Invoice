@@ -57,3 +57,13 @@ export function sqlErrorResponse(err: SqlError, headers: Record<string, string>)
     status === 500 ? 'Something went wrong. Please try again.' : (err.message ?? 'Request failed');
   return json(status, { error: message, code: err.code ?? 'internal' }, headers);
 }
+
+export const tooManyRequests = (headers: Record<string, string>): Response =>
+  json(
+    429,
+    { error: 'Too many requests. Please wait a moment and try again.', code: 'rate_limited' },
+    {
+      ...headers,
+      'Retry-After': '60',
+    },
+  );

@@ -33,7 +33,7 @@ function setup(answer: unknown, opts: { allowed?: boolean } = {}) {
     today: () => '2026-10-24',
     userFromToken: (t) => Promise.resolve(t === 'good' ? 'user-1' : null),
     rpc: (name, args) => {
-      calls.push({ name, args });
+      if (name !== 'rf_rate_limit' && name !== 'rf_heartbeat') calls.push({ name, args });
       if (name === 'rf_begin_ai')
         return Promise.resolve({ data: opts.allowed ?? true, error: null });
       if (name === 'rf_ai_invoice_context') {

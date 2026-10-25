@@ -4,7 +4,7 @@ This describes how SASU Invoice grows from a browser-only invoice editor into a
 multi-tenant SaaS (cloud invoices, clients, teams, RecoverFlow AI reminders and
 subscriptions), and what exists today.
 
-**Status:** Phases 1–5 (foundation, core business management, RecoverFlow AI, subscription billing, recurring invoices / reports / permissions / admin) are implemented. Phase 6 (production readiness) is next.
+**Status:** All six phases are implemented and tested locally. Running it for real needs the accounts and setup in [../operations/runbook.md](../operations/runbook.md).
 
 ## Principles
 
@@ -367,10 +367,11 @@ forward-only; write a new migration to revert a change and test it on staging fi
 | --- | --- |
 | `npm test` | Editor and dashboard unit tests (Vitest + jsdom), including XSS rendering tests. |
 | `npm run test:functions` | All Edge Functions (Deno): auth, validation, server-side totals, CORS, error mapping, Svix signatures, Resend requests and retry classification, the worker loop, manual sends, AI guardrails, redaction and allowance. |
-| `PG_ADMIN_URL=… npm run test:db` | Migrations + 252 SQL checks on plain PostgreSQL with Supabase's auth/storage emulated: cross-tenant isolation, write paths, locked documents, plan limits, invitations, storage, payments ledger rules, share links, dashboard aggregates, and the reminder queue (send hours, weekends, idempotency, leases, backoff, crash recovery, cancellation, opt-out, webhook ordering, suppression, usage limits) and billing (ownership, downgrade guards, webhook idempotency and ordering, subscription hijack, provider-id exposure), recurring runs, reports, member permissions and admin isolation. |
+| `PG_ADMIN_URL=… npm run test:db` | Migrations + 261 SQL checks on plain PostgreSQL with Supabase's auth/storage emulated: cross-tenant isolation, write paths, locked documents, plan limits, invitations, storage, payments ledger rules, share links, dashboard aggregates, and the reminder queue (send hours, weekends, idempotency, leases, backoff, crash recovery, cancellation, opt-out, webhook ordering, suppression, usage limits) and billing (ownership, downgrade guards, webhook idempotency and ordering, subscription hijack, provider-id exposure), recurring runs, reports, member permissions and admin isolation, plus a catalog audit (RLS on every table, function allow-lists for anon and signed-in users, pinned search_path on every security-definer function, no browser write access to financial tables). |
 | `npm run functions:check` | The Edge Function's copy of `src/core` is up to date. |
+| `npm run test:e2e` | Playwright in Google Chrome against the production build with production headers: the original editor end to end (build, autosave, issue, PDF), pricing, the client invoice view (mocked backend), signed-out dashboard flows, security headers. |
 
-All four run in CI (`.github/workflows/ci.yml`); the database job uses a Postgres
+All of these run in CI (`.github/workflows/ci.yml`); the database job uses a Postgres
 service container, so no secrets are needed.
 
 ## Roadmap
@@ -382,7 +383,7 @@ service container, so no secrets are needed.
 | 3. RecoverFlow AI | Email sending (Resend) with delivery webhooks and suppression, editable templates, reminder schedule on a durable queue (pg_cron, skip-locked leases, idempotency keys, backoff), pause / dispute / client opt-out, AI drafting, rewriting, reply analysis and receivables summary with usage limits | **Done** |
 | 4. Monetization | Paddle behind a `BillingProvider` interface, checkout, signed idempotent webhooks, upgrade/downgrade with limit checks, cancel/resume, customer portal, billing history, usage display, public pricing page | **Done** |
 | 5. Advanced | Recurring invoices, reports and CSV/PDF exports, member permission switches, platform admin console with feature switches | **Done** |
-| 6. Production readiness | Security review, Playwright E2E, monitoring and alerting, backups and restore drills, performance | Planned |
+| 6. Production readiness | Schema security audit in CI, rate limits, health endpoint and scheduler heartbeat, route-level code splitting, Playwright E2E, production env check, operations runbook | **Done** |
 
 ## Pending / known gaps
 
@@ -392,7 +393,6 @@ service container, so no secrets are needed.
   documents themselves still need to be written and linked.
 - **Account deletion:** requests are recorded; an operator procedure (export,
   ownership transfer, deletion, confirmation email) still needs defining.
-- **Rate limiting** of the Edge Function beyond Supabase's built-in auth limits.
 - **Invitation emails** are not sent yet (owners copy a link) until Phase 3 email.
   Share links are likewise copied by hand until invoice emails exist.
 - **Void vs. cancelled:** the editor's "Cancelled" status is used for void
@@ -419,3 +419,27 @@ service container, so no secrets are needed.
 - **React fast refresh in dev:** `@vitejs/plugin-react` conflicts with
   `vite-plugin-pwa`'s Babel dependency tree today, so dev uses full reloads. JSX
   is compiled by Vite's built-in oxc transform.
+
+## Production hardening (Phase 6)
+
+- **Schema audit in CI** (`supabase/tests/sql/06_audit.sql`) reads the
+  Postgres catalog: a table without RLS, a function callable by `anon` or
+  signed-in users outside the allow-list, a security-definer function without
+  a pinned `search_path`, or browser write access to a financial table fails
+  the build.
+- **Rate limits** per user and action in the user-facing functions (fixed
+  one-minute windows in Postgres): saving 120, emails 20, AI 10, billing 10.
+  They fail open if the counter is unreachable, since every other check still
+  applies.
+- **Health and heartbeat.** The scheduler records a heartbeat each run;
+  `GET /functions/v1/health` returns 503 when the database is unreachable or the
+  scheduler hasn't run for 15 minutes, and the admin console shows the same.
+- **Performance.** Dashboard pages load on demand; the first download fell from
+  136 KB to 79 KB (gzipped). supabase-js is never loaded by the editor unless
+  cloud saving is on.
+- **Deploy safety.** Production builds run `npm run check:env`, which fails on
+  missing cloud configuration or a server secret named `VITE_*`.
+
+Operations (environments, first deploy, releases, monitoring, incidents,
+secret rotation, backups, rollback, data requests, launch checklist):
+[../operations/runbook.md](../operations/runbook.md).

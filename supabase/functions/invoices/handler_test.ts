@@ -19,7 +19,7 @@ function deps(
     allowedOrigins: ['https://app.test'],
     userFromToken: (token) => Promise.resolve(token === 'good' ? 'user-1' : null),
     rpc: (name, args) => {
-      calls.push({ name, args });
+      if (name !== 'rf_rate_limit' && name !== 'rf_heartbeat') calls.push({ name, args });
       return Promise.resolve({ data: rpcResult, error: null });
     },
   };

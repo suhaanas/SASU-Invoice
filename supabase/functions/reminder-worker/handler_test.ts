@@ -55,7 +55,7 @@ function setup(
     fromAddress: 'invoices@mail.test',
     provider,
     rpc: (name, args) => {
-      calls.push({ name, args });
+      if (name !== 'rf_rate_limit' && name !== 'rf_heartbeat') calls.push({ name, args });
       if (name === 'rf_scheduler_flags') return Promise.resolve({ data: flags, error: null });
       if (name === 'rf_claim_recurring') return Promise.resolve({ data: [], error: null });
       if (name === 'rf_enqueue_due_reminders') return Promise.resolve({ data: 2, error: null });
@@ -188,7 +188,7 @@ Deno.test(
         },
       },
       rpc: (name, args) => {
-        calls.push({ name, args });
+        if (name !== 'rf_rate_limit' && name !== 'rf_heartbeat') calls.push({ name, args });
         switch (name) {
           case 'rf_scheduler_flags':
             return Promise.resolve({ data: { reminders: false, recurring: true }, error: null });

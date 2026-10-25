@@ -25,7 +25,7 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router';
 import { useAuth } from '../lib/auth';
 import { canManage, useActiveOrg, useOrgs } from '../lib/org';
 import { useQueryClient } from '@tanstack/react-query';
-import { useIsPlatformAdmin } from '../pages/Admin';
+import { useIsPlatformAdmin } from '../lib/admin';
 import { cn } from './ui';
 
 const NAV = [

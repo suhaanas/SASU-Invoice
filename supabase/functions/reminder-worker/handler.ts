@@ -245,5 +245,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     ],
   };
   console.log(JSON.stringify({ fn: 'scheduler', ...summary }));
+  // Heartbeat: lets the admin console and /health notice a stopped cron job.
+  await deps.rpc('rf_heartbeat', { p_name: 'scheduler', p_summary: summary });
   return json(200, summary);
 }

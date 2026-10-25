@@ -78,3 +78,9 @@ entrypoint = "./functions/billing/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/billing-webhook/index.ts"
+
+# Uptime monitoring; public summary, details with WORKER_SECRET.
+[functions.health]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/health/index.ts"

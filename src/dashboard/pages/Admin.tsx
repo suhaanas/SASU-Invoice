@@ -18,14 +18,8 @@ import {
   Spinner,
   cn,
 } from '../components/ui';
-import {
-  adminOrganizations,
-  adminOverview,
-  errorMessage,
-  isPlatformAdmin,
-  listFlags,
-  setFlag,
-} from '../lib/api';
+import { adminOrganizations, adminOverview, errorMessage, listFlags, setFlag } from '../lib/api';
+import { useIsPlatformAdmin } from '../lib/admin';
 import { useSupabase } from '../lib/auth';
 import { date, money } from '../lib/format';
 import { useToast } from '../lib/toast';
@@ -38,15 +32,6 @@ const HEALTH_LABELS: Record<string, string> = {
   billingErrors7d: 'Billing webhook errors (7 days)',
   aiErrors7d: 'AI errors or rejected drafts (7 days)',
 };
-
-export function useIsPlatformAdmin() {
-  const sb = useSupabase();
-  return useQuery({
-    queryKey: ['platform-admin'],
-    queryFn: () => isPlatformAdmin(sb),
-    staleTime: 5 * 60_000,
-  });
-}
 
 export function AdminPage() {
   const admin = useIsPlatformAdmin();

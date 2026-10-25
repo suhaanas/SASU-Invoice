@@ -15,7 +15,8 @@ import { z } from 'zod';
 import { computeTotals } from '../_shared/core/calc.ts';
 import { invoiceSchema } from '../_shared/core/validate.ts';
 import type { InvoiceState } from '../_shared/core/state.ts';
-import { corsHeaders, json, sqlErrorResponse, type SqlError } from '../_shared/http.ts';
+import { overLimit, type Rpc } from '../_shared/supabase.ts';
+import { corsHeaders, json, tooManyRequests, sqlErrorResponse } from '../_shared/http.ts';
 
 export const MAX_BODY_BYTES = 8 * 1024 * 1024;
 export const MAX_IMPORT = 200;
@@ -24,10 +25,7 @@ export interface Deps {
   allowedOrigins: string[];
   /** Resolve the bearer token to a user id, or null if invalid/expired. */
   userFromToken(token: string): Promise<string | null>;
-  rpc(
-    name: 'save_invoice' | 'import_invoices',
-    args: Record<string, unknown>,
-  ): Promise<{ data: unknown; error: SqlError | null }>;
+  rpc: Rpc;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -79,6 +77,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   const token = /^Bearer (.+)$/.exec(req.headers.get('Authorization') ?? '')?.[1];
   const userId = token ? await deps.userFromToken(token) : null;
   if (!userId) return json(401, { error: 'Please sign in again', code: 'SA401' }, cors);
+  if (await overLimit(deps.rpc, `invoices:${userId}`, 120)) return tooManyRequests(cors);
 
   if (Number(req.headers.get('Content-Length') ?? 0) > MAX_BODY_BYTES) {
     return json(413, { error: 'Request too large' }, cors);

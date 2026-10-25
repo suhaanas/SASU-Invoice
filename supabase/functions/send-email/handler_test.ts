@@ -48,7 +48,7 @@ function setup(result: SendResult, prepData: unknown = ctx, configured = true) {
     provider,
     userFromToken: (t) => Promise.resolve(t === 'good' ? 'user-1' : null),
     rpc: (name, args) => {
-      calls.push({ name, args });
+      if (name !== 'rf_rate_limit' && name !== 'rf_heartbeat') calls.push({ name, args });
       return Promise.resolve({
         data: name === 'rf_prepare_manual_email' ? prepData : null,
         error: null,
@@ -127,4 +127,12 @@ Deno.test('without a configured provider it says so plainly', async () => {
   const res = await handle(post(valid), deps);
   assertEquals(res.status, 503, 'status');
   assertEquals((await res.json()).error, 'Email sending is not set up yet.', 'message');
+});
+
+Deno.test('rate limited users get 429 before anything is sent', async () => {
+  const { deps, sent } = setup({ ok: true, providerMessageId: 'x' });
+  const rpc = deps.rpc;
+  deps.rpc = (name, args) => (name === 'rf_rate_limit' ? Promise.resolve({ data: false, error: null }) : rpc(name, args));
+  const res = await handle(post(valid), deps);
+  assertEquals([res.status, res.headers.get('Retry-After'), sent.length], [429, '60', 0], 'limited');
 });

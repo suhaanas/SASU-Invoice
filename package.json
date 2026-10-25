@@ -21,7 +21,10 @@
     "functions:sync": "node scripts/sync-functions-core.mjs",
     "functions:check": "node scripts/sync-functions-core.mjs --check",
     "test:functions": "cd supabase/functions && deno test --allow-env && deno check */index.ts",
-    "test:db": "bash supabase/tests/run-local.sh"
+    "test:db": "bash supabase/tests/run-local.sh",
+    "build:e2e": "VITE_SUPABASE_URL=https://e2e-placeholder.supabase.co VITE_SUPABASE_ANON_KEY=e2e-placeholder-anon-key vite build --outDir dist-e2e",
+    "test:e2e": "playwright test",
+    "check:env": "node scripts/check-env.mjs"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.3.0",
@@ -44,6 +47,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.0",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/react": "^16.3.3",
     "@types/node": "^24.19.1",

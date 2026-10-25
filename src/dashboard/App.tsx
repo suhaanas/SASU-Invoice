@@ -1,4 +1,5 @@
 import { CloudOff } from 'lucide-react';
+import { lazy, Suspense } from 'react';
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router';
 import { AppShell, Logo } from './components/AppShell';
 import { Alert, Card, Spinner } from './components/ui';
@@ -6,20 +7,46 @@ import { errorMessage } from './lib/api';
 import { useAuth } from './lib/auth';
 import { canManage, useOrgs } from './lib/org';
 import { ForgotPasswordPage, LoginPage, RegisterPage, ResetPasswordPage } from './pages/Auth';
-import { AdminPage } from './pages/Admin';
-import { BillingPage } from './pages/Billing';
-import { BrowserPage } from './pages/Browser';
 import { InvitePage } from './pages/Invite';
-import { ClientDetailPage, ClientsPage, NewClientPage } from './pages/Clients';
-import { InvoiceDetailPage } from './pages/InvoiceDetail';
-import { InvoicesPage } from './pages/Invoices';
-import { RecurringPage } from './pages/Recurring';
-import { RemindersPage } from './pages/Reminders';
-import { ReportsPage } from './pages/Reports';
-import { SearchPage } from './pages/Search';
-import { OnboardingPage } from './pages/Onboarding';
-import { OverviewPage } from './pages/Overview';
-import { AccountPage, OrganizationSettingsPage, TeamPage } from './pages/Settings';
+
+/** Pages load on demand so the first screen downloads only what it needs. */
+const AdminPage = lazy(() => import('./pages/Admin').then((m) => ({ default: m.AdminPage })));
+const BillingPage = lazy(() => import('./pages/Billing').then((m) => ({ default: m.BillingPage })));
+const BrowserPage = lazy(() => import('./pages/Browser').then((m) => ({ default: m.BrowserPage })));
+const InvoiceDetailPage = lazy(() =>
+  import('./pages/InvoiceDetail').then((m) => ({ default: m.InvoiceDetailPage })),
+);
+const InvoicesPage = lazy(() =>
+  import('./pages/Invoices').then((m) => ({ default: m.InvoicesPage })),
+);
+const OnboardingPage = lazy(() =>
+  import('./pages/Onboarding').then((m) => ({ default: m.OnboardingPage })),
+);
+const OverviewPage = lazy(() =>
+  import('./pages/Overview').then((m) => ({ default: m.OverviewPage })),
+);
+const RecurringPage = lazy(() =>
+  import('./pages/Recurring').then((m) => ({ default: m.RecurringPage })),
+);
+const RemindersPage = lazy(() =>
+  import('./pages/Reminders').then((m) => ({ default: m.RemindersPage })),
+);
+const ReportsPage = lazy(() => import('./pages/Reports').then((m) => ({ default: m.ReportsPage })));
+const SearchPage = lazy(() => import('./pages/Search').then((m) => ({ default: m.SearchPage })));
+const ClientDetailPage = lazy(() =>
+  import('./pages/Clients').then((m) => ({ default: m.ClientDetailPage })),
+);
+const ClientsPage = lazy(() => import('./pages/Clients').then((m) => ({ default: m.ClientsPage })));
+const NewClientPage = lazy(() =>
+  import('./pages/Clients').then((m) => ({ default: m.NewClientPage })),
+);
+const AccountPage = lazy(() =>
+  import('./pages/Settings').then((m) => ({ default: m.AccountPage })),
+);
+const OrganizationSettingsPage = lazy(() =>
+  import('./pages/Settings').then((m) => ({ default: m.OrganizationSettingsPage })),
+);
+const TeamPage = lazy(() => import('./pages/Settings').then((m) => ({ default: m.TeamPage })));
 
 function RequireAuth() {
   const { session, loading, recovering } = useAuth();
@@ -66,44 +93,46 @@ function OnboardingBanner() {
 
 export function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/invite" element={<InvitePage />} />
-      <Route element={<RequireAuth />}>
-        <Route path="/onboarding" element={<OnboardingPage />} />
-        <Route element={<RequireOrg />}>
-          <Route
-            element={
-              <>
-                <OnboardingBanner />
-                <AppShell />
-              </>
-            }
-          >
-            <Route index element={<OverviewPage />} />
-            <Route path="/invoices" element={<InvoicesPage />} />
-            <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
-            <Route path="/clients" element={<ClientsPage />} />
-            <Route path="/clients/new" element={<NewClientPage />} />
-            <Route path="/clients/:id" element={<ClientDetailPage />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/reminders" element={<RemindersPage />} />
-            <Route path="/recurring" element={<RecurringPage />} />
-            <Route path="/reports" element={<ReportsPage />} />
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="/browser" element={<BrowserPage />} />
-            <Route path="/settings/organization" element={<OrganizationSettingsPage />} />
-            <Route path="/settings/team" element={<TeamPage />} />
-            <Route path="/settings/account" element={<AccountPage />} />
-            <Route path="/settings/billing" element={<BillingPage />} />
+    <Suspense fallback={<Spinner />}>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/invite" element={<InvitePage />} />
+        <Route element={<RequireAuth />}>
+          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route element={<RequireOrg />}>
+            <Route
+              element={
+                <>
+                  <OnboardingBanner />
+                  <AppShell />
+                </>
+              }
+            >
+              <Route index element={<OverviewPage />} />
+              <Route path="/invoices" element={<InvoicesPage />} />
+              <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
+              <Route path="/clients" element={<ClientsPage />} />
+              <Route path="/clients/new" element={<NewClientPage />} />
+              <Route path="/clients/:id" element={<ClientDetailPage />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/reminders" element={<RemindersPage />} />
+              <Route path="/recurring" element={<RecurringPage />} />
+              <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/browser" element={<BrowserPage />} />
+              <Route path="/settings/organization" element={<OrganizationSettingsPage />} />
+              <Route path="/settings/team" element={<TeamPage />} />
+              <Route path="/settings/account" element={<AccountPage />} />
+              <Route path="/settings/billing" element={<BillingPage />} />
+            </Route>
           </Route>
         </Route>
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }
 

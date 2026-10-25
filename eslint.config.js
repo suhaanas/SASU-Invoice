@@ -4,7 +4,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', '.kilo', 'supabase/functions/_shared/core'] },
+  { ignores: ['dist', 'dist-e2e', 'test-results', 'playwright-report', 'node_modules', '.kilo', 'supabase/functions/_shared/core'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -56,7 +56,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['scripts/**', 'vite.config.ts'],
+    files: ['scripts/**', 'vite.config.ts', 'playwright.config.ts', 'e2e/**'],
     languageOptions: { globals: { ...globals.node } },
   },
   {

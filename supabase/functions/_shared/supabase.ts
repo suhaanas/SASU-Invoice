@@ -41,3 +41,26 @@ export function rpcLogger(fn: string): Rpc {
     return { data, error };
   };
 }
+
+/**
+ * Per-user/action rate limit (fixed window, counted in the database). Fails
+ * open if the counter can't be reached: authentication and every business
+ * rule still apply, so an outage of the limiter doesn't become an outage.
+ */
+export async function overLimit(
+  rpc: Rpc,
+  key: string,
+  limit: number,
+  windowSeconds = 60,
+): Promise<boolean> {
+  const { data, error } = await rpc('rf_rate_limit', {
+    p_key: key,
+    p_limit: limit,
+    p_window_seconds: windowSeconds,
+  });
+  if (error) {
+    console.error(JSON.stringify({ rateLimit: key, error: error.message }));
+    return false;
+  }
+  return data === false;
+}

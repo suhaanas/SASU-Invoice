@@ -100,7 +100,9 @@ Optional accounts add cloud storage, organizations and teams on top of the free 
 - **Set up:** copy `.env.example` to `.env.local` and fill in your Supabase project's URL and anon key. Without them the build still works and the dashboard reports that cloud features are off.
 - **Tests:** `npm run test:functions` (Deno) and `PG_ADMIN_URL=postgres://postgres@localhost:5432/postgres npm run test:db` (any scratch PostgreSQL 15+ server; it creates and drops a `sasu_test` database).
 
-Architecture, data model, security model, deployment steps and roadmap: [docs/architecture/saas.md](docs/architecture/saas.md).
+- **End-to-end:** `npm run test:e2e` (Playwright, uses your installed Google Chrome).
+
+Architecture, data model and security model: [docs/architecture/saas.md](docs/architecture/saas.md). Deploying and running it (staging/production, monitoring, incidents, backups, rollback, data requests): [docs/operations/runbook.md](docs/operations/runbook.md).
 
 ## What SASU Invoice doesn't do
 

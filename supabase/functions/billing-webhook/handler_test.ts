@@ -56,7 +56,7 @@ Deno.test('subscription events are mapped to the database call', async () => {
     secret: SECRET,
     nowSeconds: () => NOW,
     rpc: (name, args) => {
-      calls.push({ name, args });
+      if (name !== 'rf_rate_limit' && name !== 'rf_heartbeat') calls.push({ name, args });
       return Promise.resolve({ data: 'applied', error: null });
     },
   });
@@ -95,7 +95,7 @@ Deno.test('other events are recorded, and malformed org ids are dropped', async 
     secret: SECRET,
     nowSeconds: () => NOW,
     rpc: (name, args) => {
-      calls.push({ name, args });
+      if (name !== 'rf_rate_limit' && name !== 'rf_heartbeat') calls.push({ name, args });
       return Promise.resolve({ data: 'ignored', error: null });
     },
   });
