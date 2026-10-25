@@ -200,7 +200,15 @@ function GoogleIcon() {
  * "Continue with Google" plus an "or" divider. Renders nothing until Google is
  * switched on in Supabase Auth, so email sign-in keeps working on its own.
  */
-function SocialSignIn({ next, onError }: { next: string; onError: (msg: string) => void }) {
+function SocialSignIn({
+  next,
+  onError,
+  signUp = false,
+}: {
+  next: string;
+  onError: (msg: string) => void;
+  signUp?: boolean;
+}) {
   const { sb } = useAuth();
   const { google } = useAuthProviders();
   const [busy, setBusy] = useState(false);
@@ -231,6 +239,19 @@ function SocialSignIn({ next, onError }: { next: string; onError: (msg: string) 
         {!busy && <GoogleIcon />}
         Continue with Google
       </Button>
+      {signUp && (
+        <p className="mt-2 text-center text-xs text-faint">
+          By continuing with Google you agree to the{' '}
+          <a href="/terms.html" target="_blank" className="underline">
+            terms
+          </a>{' '}
+          and{' '}
+          <a href="/privacy.html" target="_blank" className="underline">
+            privacy policy
+          </a>
+          .
+        </p>
+      )}
       <div className="my-5 flex items-center gap-3 text-xs text-faint" role="separator">
         <span className="h-px flex-1 bg-rule" />
         or with email
@@ -396,7 +417,7 @@ export function RegisterPage() {
           {error}
         </Alert>
       )}
-      <SocialSignIn next={next} onError={setError} />
+      <SocialSignIn next={next} onError={setError} signUp />
       <form onSubmit={submit} className="space-y-4" noValidate>
         <Field label="Your name">
           {(p) => (
@@ -458,8 +479,19 @@ export function RegisterPage() {
             onChange={(e) => setAccepted(e.target.checked)}
           />
           <span>
-            I agree to the terms of service and the privacy notice. Invoices I store in the cloud
-            are processed on my behalf.
+            I agree to the{' '}
+            <a href="/terms.html" target="_blank" className="font-medium text-brand-ink underline">
+              terms of service
+            </a>{' '}
+            and the{' '}
+            <a
+              href="/privacy.html"
+              target="_blank"
+              className="font-medium text-brand-ink underline"
+            >
+              privacy policy
+            </a>
+            . Invoices I store in the cloud are processed on my behalf.
           </span>
         </label>
         <Button type="submit" size="lg" className="w-full" loading={busy}>

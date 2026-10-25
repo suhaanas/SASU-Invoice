@@ -118,3 +118,23 @@ test('an incomplete client link explains itself', async ({ page }) => {
   await page.goto('/invoice.html#t=short');
   await expect(page.getByRole('heading', { name: 'Link incomplete' })).toBeVisible();
 });
+
+test('terms, privacy and refund policies are linked from the landing and pricing pages', async ({
+  page,
+}) => {
+  for (const start of ['/', '/pricing.html']) {
+    for (const [link, heading] of [
+      ['/terms.html', 'Terms of service'],
+      ['/privacy.html', 'Privacy policy'],
+      ['/refunds.html', 'Refund policy'],
+    ] as const) {
+      await page.goto(start);
+      await page.locator(`a[href="${link}"]`).first().click();
+      await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+    }
+  }
+  await page.goto('/terms.html');
+  await expect(page.getByText('Paddle.com is the Merchant of Record')).toBeVisible();
+  await page.goto('/refunds.html');
+  await expect(page.getByText('14 days', { exact: true })).toBeVisible();
+});

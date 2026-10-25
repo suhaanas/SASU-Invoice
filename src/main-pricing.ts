@@ -8,6 +8,7 @@ import '@fontsource/space-grotesk/500.css';
 import '@fontsource/space-grotesk/700.css';
 import './styles/view.css';
 import './styles/pricing.css';
+import './styles/legal.css';
 
 import { cloudConfig } from './cloud/config';
 import { formatMoney } from './core/money';
