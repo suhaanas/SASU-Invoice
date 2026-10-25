@@ -3,7 +3,7 @@
   "version": "3.0.0",
   "private": true,
   "description": "Invoice generator and cloud invoicing workspace.",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "type": "module",
   "engines": {
     "node": ">=22.12.0"

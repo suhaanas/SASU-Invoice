@@ -122,8 +122,8 @@ Architecture, data model and security model: [docs/architecture/saas.md](docs/ar
 
 ## Contributing
 
-Issues and pull requests are welcome on the [issues page](https://github.com/suhaAnas/SASU-Invoice/issues). Please run `npm run lint && npm test` before opening a PR.
+Please run `npm run lint && npm test` before opening a PR.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+Proprietary. © 2026 Suha Anas. All rights reserved. No licence is granted to copy, modify or redistribute this code.
