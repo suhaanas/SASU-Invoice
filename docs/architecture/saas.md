@@ -4,7 +4,7 @@ This describes how SASU Invoice grows from a browser-only invoice editor into a
 multi-tenant SaaS (cloud invoices, clients, teams, RecoverFlow AI reminders and
 subscriptions), and what exists today.
 
-**Status:** Phases 1–4 (foundation, core business management, RecoverFlow AI, subscription billing) are implemented. Phases 5–6 are planned, not built.
+**Status:** Phases 1–5 (foundation, core business management, RecoverFlow AI, subscription billing, recurring invoices / reports / permissions / admin) are implemented. Phase 6 (production readiness) is next.
 
 ## Principles
 
@@ -199,6 +199,48 @@ Paddle ──► billing-webhook (Paddle-Signature, 5-min window) ──► bill
   Permissions-Policy allows the Payment Request API for Paddle's checkout
   origins only.
 
+## Recurring invoices, reports, permissions and admin (Phase 5)
+
+**Recurring invoices.** Any invoice can be set to repeat weekly, monthly,
+quarterly, annually or every *n* weeks/months/years, from a start date until an
+optional end date, as drafts or issued automatically (optionally emailed).
+
+- Dates are `start + k × period`, computed identically in TypeScript
+  (`src/core/recurrence.ts`) and SQL (`app.recurring_date`), so 31 January
+  becomes 28 February then 31 March, not the 28th forever.
+- The scheduler (the same pg_cron worker) claims due schedules with a lease,
+  builds each invoice from the template with the shared core (fresh ids, new
+  dates, same payment terms, nothing paid), and `rf_complete_recurring` assigns
+  the next number in the series and saves it, at most once per schedule and
+  date (`recurring_runs` unique key). A failed run (for example a plan limit)
+  is shown on the schedule and retried an hour later.
+- Pausing and resuming skips missed periods rather than back-filling them.
+- Numbers are assigned on the server from the organization's prefix
+  (`app.next_document_number`). A browser draft using the same number would be
+  refused when issued and need renumbering.
+
+**Reports.** `report_summary(org, currency, from, to, client?, member?)`
+returns invoiced, credited, received, still-owed and overdue totals, a monthly
+series, top clients, status counts, email activity and recurring activity for
+one currency. The Reports page exports each table plus full invoice and payment
+lists to CSV (formula injection neutralised) and prints cleanly to PDF.
+
+**Member permissions.** Owners and admins can do everything. Each member has
+switches (all on by default): record payments, send emails, add/edit clients,
+view reports. They are enforced in the database (RLS on clients; triggers on
+payments and emails; checks in reports and recurring email schedules), not just
+hidden in the UI.
+
+**Platform admin.** `platform_admins` (granted only via SQL,
+`supabase/setup/platform-admin.sql`) unlocks `/dashboard/admin`: platform
+totals, subscriptions and estimated monthly recurring revenue per currency,
+health counters (failed or stuck reminder jobs, email problems, recurring and
+billing errors, AI errors), an organization directory with metadata and counts
+only, and feature switches (`ai_assistant`, `automatic_reminders`,
+`recurring_invoices`) that the functions obey. Admins are not organization
+members, so RLS still keeps them out of customer data; every admin call is
+written to the audit log.
+
 ### Locked documents
 
 Once a document is issued (`issued_at` set), a trigger blocks any change except
@@ -224,6 +266,8 @@ cannot be deleted; drafts can (soft delete).
 | Send emails, pause reminders, mark disputes | ✓ | ✓ | ✓ | ✗ |
 | Turn reminders on/off, edit schedule and wording, unblock addresses | ✓ | ✓ | ✗ | ✗ |
 | Read AI usage logs | ✓ | ✓ | ✗ | ✗ |
+| Recurring schedules (create, edit, pause, cancel) | ✓ | ✓ | ✓ | ✗ |
+| Change member permission switches | ✓ | ✓ | ✗ | ✗ |
 | Choose, change or cancel the plan; payment method; billing invoices | ✓ | ✗ | ✗ | ✗ |
 | See the plan and usage | ✓ | ✓ | ✓ | ✗ |
 | Change subscription | billing backend only | | | |
@@ -323,7 +367,7 @@ forward-only; write a new migration to revert a change and test it on staging fi
 | --- | --- |
 | `npm test` | Editor and dashboard unit tests (Vitest + jsdom), including XSS rendering tests. |
 | `npm run test:functions` | All Edge Functions (Deno): auth, validation, server-side totals, CORS, error mapping, Svix signatures, Resend requests and retry classification, the worker loop, manual sends, AI guardrails, redaction and allowance. |
-| `PG_ADMIN_URL=… npm run test:db` | Migrations + 207 SQL checks on plain PostgreSQL with Supabase's auth/storage emulated: cross-tenant isolation, write paths, locked documents, plan limits, invitations, storage, payments ledger rules, share links, dashboard aggregates, and the reminder queue (send hours, weekends, idempotency, leases, backoff, crash recovery, cancellation, opt-out, webhook ordering, suppression, usage limits) and billing (ownership, downgrade guards, webhook idempotency and ordering, subscription hijack, provider-id exposure). |
+| `PG_ADMIN_URL=… npm run test:db` | Migrations + 252 SQL checks on plain PostgreSQL with Supabase's auth/storage emulated: cross-tenant isolation, write paths, locked documents, plan limits, invitations, storage, payments ledger rules, share links, dashboard aggregates, and the reminder queue (send hours, weekends, idempotency, leases, backoff, crash recovery, cancellation, opt-out, webhook ordering, suppression, usage limits) and billing (ownership, downgrade guards, webhook idempotency and ordering, subscription hijack, provider-id exposure), recurring runs, reports, member permissions and admin isolation. |
 | `npm run functions:check` | The Edge Function's copy of `src/core` is up to date. |
 
 All four run in CI (`.github/workflows/ci.yml`); the database job uses a Postgres
@@ -337,7 +381,7 @@ service container, so no secrets are needed.
 | 2. Core business | Clients (list, profile, create/edit/archive, balances, "new invoice for client"), payments ledger with void, partially paid / overdue statuses, invoice detail with history, overview KPIs and charts per currency, invoice filters and sorting, header search, share links and client invoice view | **Done** |
 | 3. RecoverFlow AI | Email sending (Resend) with delivery webhooks and suppression, editable templates, reminder schedule on a durable queue (pg_cron, skip-locked leases, idempotency keys, backoff), pause / dispute / client opt-out, AI drafting, rewriting, reply analysis and receivables summary with usage limits | **Done** |
 | 4. Monetization | Paddle behind a `BillingProvider` interface, checkout, signed idempotent webhooks, upgrade/downgrade with limit checks, cancel/resume, customer portal, billing history, usage display, public pricing page | **Done** |
-| 5. Advanced | Recurring invoices, reports and exports, granular team permissions, super-admin console | Planned |
+| 5. Advanced | Recurring invoices, reports and CSV/PDF exports, member permission switches, platform admin console with feature switches | **Done** |
 | 6. Production readiness | Security review, Playwright E2E, monitoring and alerting, backups and restore drills, performance | Planned |
 
 ## Pending / known gaps
@@ -367,6 +411,8 @@ service container, so no secrets are needed.
 - **Paddle.js** can't be version-pinned or self-hosted (Paddle requires its CDN
   build); it is loaded only on `pay.html`.
 - **Annual billing** isn't offered yet; add yearly prices to `plans` and Paddle.
+- **Assigned clients:** members see all of the organization's clients; limiting
+  a member to assigned clients is not built.
 - **AI model choice:** `OPENAI_MODEL` defaults to `gpt-4.1-mini`; confirm a current
   model with structured-output support before launch.
 - **Dark mode:** the dashboard, like the editor, is light-only.

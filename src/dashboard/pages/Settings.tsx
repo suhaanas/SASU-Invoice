@@ -31,12 +31,14 @@ import {
   removeMember,
   requestAccountDeletion,
   revokeInvitation,
+  updateMemberPermissions,
   updateMemberRole,
   updateOrganization,
   updateProfile,
   updateSettings,
   uploadLogo,
   type Member,
+  type MemberPermissions,
   type OrgRole,
   type OrgSettings,
 } from '../lib/api';
@@ -664,6 +666,7 @@ export function TeamPage() {
                         )}
                       </Button>
                     )}
+                    {manage && m.role === 'member' && <MemberPermissionsRow member={m} />}
                   </li>
                 );
               })}
@@ -711,6 +714,45 @@ export function TeamPage() {
           : `${removing?.profile?.email} will lose access immediately.`}
       </ConfirmDialog>
     </>
+  );
+}
+
+const PERMISSION_LABELS: [keyof MemberPermissions, string][] = [
+  ['record_payments', 'Record payments'],
+  ['send_emails', 'Send emails'],
+  ['manage_clients', 'Add and edit clients'],
+  ['view_reports', 'View reports'],
+];
+
+function MemberPermissionsRow({ member }: { member: Member }) {
+  const sb = useSupabase();
+  const { org } = useActiveOrg();
+  const qc = useQueryClient();
+  const toast = useToast();
+  const save = useMutation({
+    mutationFn: (perms: MemberPermissions) =>
+      updateMemberPermissions(sb, org.id, member.user_id, perms),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['members', org.id] }),
+    onError: (err) => toast(errorMessage(err), 'error'),
+  });
+  const perms = member.permissions;
+  return (
+    <fieldset className="w-full pl-11 text-xs" disabled={save.isPending}>
+      <legend className="sr-only">Permissions for {member.profile?.email}</legend>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-graphite">
+        {PERMISSION_LABELS.map(([key, label]) => (
+          <label key={key} className="flex items-center gap-1.5">
+            <input
+              type="checkbox"
+              className="accent-brand"
+              checked={perms[key] !== false}
+              onChange={(e) => save.mutate({ ...perms, [key]: e.target.checked })}
+            />
+            {label}
+          </label>
+        ))}
+      </div>
+    </fieldset>
   );
 }
 

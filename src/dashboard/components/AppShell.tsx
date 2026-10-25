@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   BellRing,
   Building2,
   Contact,
@@ -11,6 +12,8 @@ import {
   LogOut,
   Menu,
   PenLine,
+  Repeat,
+  Shield,
   Plus,
   Settings,
   User,
@@ -22,6 +25,7 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router';
 import { useAuth } from '../lib/auth';
 import { canManage, useActiveOrg, useOrgs } from '../lib/org';
 import { useQueryClient } from '@tanstack/react-query';
+import { useIsPlatformAdmin } from '../pages/Admin';
 import { cn } from './ui';
 
 const NAV = [
@@ -29,6 +33,8 @@ const NAV = [
   { to: '/invoices', label: 'Invoices', icon: FileText },
   { to: '/clients', label: 'Clients', icon: Contact },
   { to: '/reminders', label: 'RecoverFlow AI', icon: BellRing },
+  { to: '/recurring', label: 'Recurring', icon: Repeat },
+  { to: '/reports', label: 'Reports', icon: BarChart3 },
   { to: '/browser', label: 'This browser', icon: HardDriveUpload },
   { to: '/settings/organization', label: 'Business settings', icon: Building2, manage: true },
   { to: '/settings/team', label: 'Team', icon: Users },
@@ -55,6 +61,7 @@ export function Logo() {
 
 function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const org = useActiveOrg();
+  const admin = useIsPlatformAdmin();
   return (
     <nav aria-label="Main" className="flex h-full flex-col gap-1 p-3">
       <a
@@ -80,6 +87,21 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           {item.label}
         </NavLink>
       ))}
+      {admin.data && (
+        <NavLink
+          to="/admin"
+          onClick={onNavigate}
+          className={({ isActive }) =>
+            cn(
+              'mt-2 flex h-9 items-center gap-2.5 rounded-lg border-t border-rule px-3 pt-2 text-sm font-medium text-graphite hover:bg-hover hover:text-ink',
+              isActive && 'bg-brand-wash text-brand-ink',
+            )
+          }
+        >
+          <Shield className="h-4 w-4" aria-hidden />
+          Platform admin
+        </NavLink>
+      )}
     </nav>
   );
 }
@@ -262,8 +284,8 @@ export function AppShell() {
   const [drawer, setDrawer] = useState(false);
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[240px_1fr]">
-      <aside className="hidden border-r border-rule bg-paper lg:block">
+    <div className="min-h-dvh lg:grid lg:grid-cols-[240px_1fr] print:block">
+      <aside className="hidden border-r border-rule bg-paper lg:block print:hidden">
         <div className="flex h-14 items-center border-b border-rule px-5">
           <Logo />
         </div>
@@ -296,7 +318,7 @@ export function AppShell() {
       )}
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-rule bg-paper/90 px-4 backdrop-blur lg:px-8">
+        <header className="sticky top-0 z-30 flex h-14 print:hidden items-center gap-2 border-b border-rule bg-paper/90 px-4 backdrop-blur lg:px-8">
           <button
             type="button"
             className="rounded-lg p-2 hover:bg-hover lg:hidden"

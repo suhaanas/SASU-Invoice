@@ -147,3 +147,17 @@ Deno.test('malformed AI output is rejected', async () => {
 Deno.test('checkDraft rejects unknown placeholders', () => {
   assertEquals('reason' in checkDraft({ subject: 's', body: 'Hi {{iban}}' }), true, 'unknown');
 });
+
+Deno.test('the admin kill switch turns the assistant off', async () => {
+  const { deps, prompts } = setup({});
+  const rpc = deps.rpc;
+  deps.rpc = (name, args) =>
+    name === 'rf_scheduler_flags'
+      ? Promise.resolve({ data: { ai: false }, error: null })
+      : rpc(name, args);
+  const res = await handle(
+    post({ action: 'analyze_reply', orgId: ORG, text: 'hello there' }),
+    deps,
+  );
+  assertEquals([res.status, prompts.length], [503, 0], 'off');
+});

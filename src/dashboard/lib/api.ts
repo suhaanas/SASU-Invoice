@@ -7,6 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { CloudError, callFunction, cloudErrorMessage } from '../../cloud/invoices';
 import type { EmailKind, Tone } from '../../core/emails';
+import type { RecurrenceUnit } from '../../core/recurrence';
 import { businessSchema } from '../../core/validate';
 
 export type OrgRole = 'owner' | 'admin' | 'member';
@@ -87,6 +88,7 @@ export interface Member {
   user_id: string;
   role: OrgRole;
   created_at: string;
+  permissions: MemberPermissions;
   profile: { full_name: string; email: string } | null;
 }
 
@@ -346,7 +348,7 @@ export async function deleteDraft(sb: SupabaseClient, invoiceId: string): Promis
 export async function listMembers(sb: SupabaseClient, orgId: string): Promise<Member[]> {
   const { data, error } = await sb
     .from('organization_members')
-    .select('user_id, role, created_at, profile:profiles(full_name, email)')
+    .select('user_id, role, created_at, permissions, profile:profiles(full_name, email)')
     .eq('org_id', orgId)
     .order('created_at');
   if (error) fail(error);
@@ -1152,4 +1154,296 @@ export async function countMembers(sb: SupabaseClient, orgId: string): Promise<n
     .eq('org_id', orgId);
   if (error) fail(error);
   return count ?? 0;
+}
+
+// --- Phase 5: recurring, reports, permissions, admin ---------------------------------
+
+export interface RecurringRule {
+  id: string;
+  template_invoice_id: string;
+  client_id: string | null;
+  name: string;
+  unit: RecurrenceUnit;
+  every: number;
+  start_date: string;
+  end_date: string | null;
+  occurrence: number;
+  next_run_date: string | null;
+  mode: 'draft' | 'issue';
+  send_email: boolean;
+  status: 'active' | 'paused' | 'cancelled' | 'ended';
+  runs_count: number;
+  last_run_at: string | null;
+  last_error: string | null;
+  template?: { number: string; client_name: string; total_minor: number; currency: string } | null;
+}
+
+export async function listRecurring(
+  sb: SupabaseClient,
+  orgId: string,
+  opts: { templateId?: string } = {},
+): Promise<RecurringRule[]> {
+  let q = sb
+    .from('recurring_rules')
+    .select(
+      'id, template_invoice_id, client_id, name, unit, every, start_date, end_date, occurrence, next_run_date, mode, send_email, status, runs_count, last_run_at, last_error, template:invoices!recurring_rules_template_invoice_id_fkey(number, client_name, total_minor, currency)',
+    )
+    .eq('org_id', orgId)
+    .order('status')
+    .order('next_run_date', { ascending: true, nullsFirst: false });
+  if (opts.templateId) q = q.eq('template_invoice_id', opts.templateId);
+  const { data, error } = await q;
+  if (error) fail(error);
+  return data as unknown as RecurringRule[];
+}
+
+export interface RecurringRun {
+  id: string;
+  run_date: string;
+  invoice_id: string | null;
+  email_message_id: string | null;
+  invoice?: { number: string; status: string } | null;
+}
+
+export async function listRecurringRuns(
+  sb: SupabaseClient,
+  ruleId: string,
+): Promise<RecurringRun[]> {
+  const { data, error } = await sb
+    .from('recurring_runs')
+    .select('id, run_date, invoice_id, email_message_id, invoice:invoices(number, status)')
+    .eq('rule_id', ruleId)
+    .order('run_date', { ascending: false })
+    .limit(24);
+  if (error) fail(error);
+  return data as unknown as RecurringRun[];
+}
+
+export interface RecurringInput {
+  unit: RecurrenceUnit;
+  every: number;
+  startDate: string;
+  endDate: string | null;
+  mode: 'draft' | 'issue';
+  sendEmail: boolean;
+  name: string;
+}
+
+export async function createRecurring(
+  sb: SupabaseClient,
+  invoiceId: string,
+  r: RecurringInput,
+): Promise<string> {
+  const { data, error } = await sb.rpc('create_recurring_rule', {
+    p_invoice: invoiceId,
+    p_unit: r.unit,
+    p_every: r.every,
+    p_start: r.startDate,
+    p_end: r.endDate,
+    p_mode: r.mode,
+    p_send_email: r.sendEmail,
+    p_name: r.name,
+  });
+  if (error) fail(error);
+  return data as string;
+}
+
+export async function updateRecurring(
+  sb: SupabaseClient,
+  ruleId: string,
+  r: Omit<RecurringInput, 'startDate'>,
+): Promise<void> {
+  const { error } = await sb.rpc('update_recurring_rule', {
+    p_rule: ruleId,
+    p_unit: r.unit,
+    p_every: r.every,
+    p_end: r.endDate,
+    p_mode: r.mode,
+    p_send_email: r.sendEmail,
+    p_name: r.name,
+  });
+  if (error) fail(error);
+}
+
+export async function setRecurringStatus(
+  sb: SupabaseClient,
+  ruleId: string,
+  status: 'active' | 'paused' | 'cancelled',
+): Promise<void> {
+  const { error } = await sb.rpc('set_recurring_status', { p_rule: ruleId, p_status: status });
+  if (error) fail(error);
+}
+
+export interface ReportSummary {
+  currency: string;
+  from: string;
+  to: string;
+  invoicedMinor: number;
+  invoiceCount: number;
+  creditedMinor: number;
+  receivedMinor: number;
+  paymentCount: number;
+  outstandingMinor: number;
+  overdueMinor: number;
+  monthly: { month: string; invoicedMinor: number; creditedMinor: number; receivedMinor: number }[];
+  topClients: {
+    clientId: string;
+    name: string;
+    invoicedMinor: number;
+    outstandingMinor: number;
+    count: number;
+  }[];
+  statusCounts: { paid: number; partial: number; unpaid: number };
+  emails: { manual: number; automatic: number; delivered: number; problems: number };
+  recurring: { active: number; generated: number; upcoming30: number };
+}
+
+export async function reportSummary(
+  sb: SupabaseClient,
+  orgId: string,
+  f: {
+    currency: string;
+    from: string;
+    to: string;
+    clientId?: string | null;
+    memberId?: string | null;
+  },
+): Promise<ReportSummary> {
+  const { data, error } = await sb.rpc('report_summary', {
+    p_org: orgId,
+    p_currency: f.currency,
+    p_from: f.from,
+    p_to: f.to,
+    p_client: f.clientId ?? null,
+    p_member: f.memberId ?? null,
+  });
+  if (error) fail(error);
+  return data as ReportSummary;
+}
+
+/** Payments in a date range, for CSV export. */
+export async function paymentsInRange(
+  sb: SupabaseClient,
+  orgId: string,
+  f: { currency: string; from: string; to: string; clientId?: string | null },
+): Promise<PaymentRow[]> {
+  let q = sb
+    .from('invoice_payments')
+    .select(`${PAYMENT_COLUMNS}, invoice:invoices!inner(number, client_name, client_id)`)
+    .eq('org_id', orgId)
+    .eq('currency', f.currency)
+    .is('voided_at', null)
+    .gte('paid_on', f.from)
+    .lte('paid_on', f.to)
+    .order('paid_on')
+    .limit(5000);
+  if (f.clientId) q = q.eq('invoice.client_id', f.clientId);
+  const { data, error } = await q;
+  if (error) fail(error);
+  return data as unknown as PaymentRow[];
+}
+
+/** Issued invoices in a date range, for CSV export. */
+export async function invoicesInRange(
+  sb: SupabaseClient,
+  orgId: string,
+  f: { currency: string; from: string; to: string; clientId?: string | null },
+): Promise<CloudInvoiceRow[]> {
+  let q = sb
+    .from('invoices')
+    .select(INVOICE_COLUMNS)
+    .eq('org_id', orgId)
+    .eq('currency', f.currency)
+    .not('issued_at', 'is', null)
+    .gte('issue_date', f.from)
+    .lte('issue_date', f.to)
+    .order('issue_date')
+    .limit(5000);
+  if (f.clientId) q = q.eq('client_id', f.clientId);
+  const { data, error } = await q;
+  if (error) fail(error);
+  return data as unknown as CloudInvoiceRow[];
+}
+
+export type MemberPermissions = {
+  record_payments: boolean;
+  send_emails: boolean;
+  manage_clients: boolean;
+  view_reports: boolean;
+};
+
+export async function updateMemberPermissions(
+  sb: SupabaseClient,
+  orgId: string,
+  userId: string,
+  permissions: MemberPermissions,
+): Promise<void> {
+  const { error } = await sb.rpc('update_member_permissions', {
+    p_org: orgId,
+    p_user: userId,
+    p_permissions: permissions,
+  });
+  if (error) fail(error);
+}
+
+export async function isPlatformAdmin(sb: SupabaseClient): Promise<boolean> {
+  const { data, error } = await sb.rpc('is_platform_admin');
+  if (error) return false;
+  return data === true;
+}
+
+export interface AdminOverview {
+  organizations: number;
+  organizations30d: number;
+  users: number;
+  plans: Record<string, number>;
+  subscriptionStatus: Record<string, number>;
+  mrr: Record<string, number>;
+  health: Record<string, number>;
+  recentBillingErrors: {
+    type: string;
+    detail: string | null;
+    receivedAt: string;
+    orgId: string | null;
+  }[];
+}
+
+export async function adminOverview(sb: SupabaseClient): Promise<AdminOverview> {
+  const { data, error } = await sb.rpc('admin_overview');
+  if (error) fail(error);
+  return data as AdminOverview;
+}
+
+export interface AdminOrg {
+  id: string;
+  name: string;
+  country: string | null;
+  created_at: string;
+  plan: string;
+  status: string | null;
+  members: number;
+  documents: number;
+  reminders_enabled: boolean | null;
+}
+
+export async function adminOrganizations(sb: SupabaseClient, search: string): Promise<AdminOrg[]> {
+  const { data, error } = await sb.rpc('admin_organizations', { p_search: search, p_limit: 100 });
+  if (error) fail(error);
+  return data as AdminOrg[];
+}
+
+export async function listFlags(
+  sb: SupabaseClient,
+): Promise<{ key: string; enabled: boolean; description: string; updated_at: string }[]> {
+  const { data, error } = await sb
+    .from('feature_flags')
+    .select('key, enabled, description, updated_at')
+    .order('key');
+  if (error) fail(error);
+  return data as { key: string; enabled: boolean; description: string; updated_at: string }[];
+}
+
+export async function setFlag(sb: SupabaseClient, key: string, enabled: boolean): Promise<void> {
+  const { error } = await sb.rpc('admin_set_flag', { p_key: key, p_enabled: enabled });
+  if (error) fail(error);
 }

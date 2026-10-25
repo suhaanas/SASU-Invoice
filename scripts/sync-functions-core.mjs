@@ -11,7 +11,7 @@ import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
-const FILES = ['money.ts', 'dates.ts', 'state.ts', 'calc.ts', 'validate.ts', 'emails.ts'];
+const FILES = ['money.ts', 'dates.ts', 'state.ts', 'calc.ts', 'validate.ts', 'emails.ts', 'recurrence.ts'];
 const outDir = resolve(root, 'supabase/functions/_shared/core');
 const HEADER = '// GENERATED from src/core by scripts/sync-functions-core.mjs. Do not edit.\n';
 const check = process.argv.includes('--check');

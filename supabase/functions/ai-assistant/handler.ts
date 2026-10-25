@@ -131,6 +131,14 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
       cors,
     );
   }
+  const flags = await deps.rpc('rf_scheduler_flags', {});
+  if ((flags.data as { ai?: boolean } | null)?.ai === false) {
+    return json(
+      503,
+      { error: 'The AI assistant is switched off right now.', code: 'disabled' },
+      cors,
+    );
+  }
 
   // Facts for drafts come from the database (and contain no personal data).
   let facts: {

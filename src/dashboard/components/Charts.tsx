@@ -64,7 +64,15 @@ function ViewToggle({ table, onChange }: { table: boolean; onChange: (t: boolean
   );
 }
 
-export function MonthlyChart({ data, digits }: { data: DashboardSummary; digits: number }) {
+export function MonthlyChart({
+  data,
+  digits,
+  period = 'Last 6 months',
+}: {
+  data: Pick<DashboardSummary, 'currency' | 'monthly'>;
+  digits: number;
+  period?: string;
+}) {
   const [table, setTable] = useState(false);
   const [activeIndex, setActive] = useState<number | null>(null);
   const titleId = useId();
@@ -92,7 +100,7 @@ export function MonthlyChart({ data, digits }: { data: DashboardSummary; digits:
             Invoiced vs received
           </h3>
           <p className="text-xs text-graphite">
-            Last 6 months · {data.currency} · received = recorded payments
+            {period} · {data.currency} · received = recorded payments
           </p>
         </div>
         <div className="flex items-center gap-3">

@@ -4,12 +4,13 @@
  * only displays them and calls the audited RPCs.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Copy, ExternalLink, Link2, Plus } from 'lucide-react';
+import { ArrowLeft, Copy, ExternalLink, Link2, Plus, Repeat } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import { setEditorSyncOrg } from '../../cloud/prefs';
 import { currencyDigits, parseAmount } from '../../core/money';
 import { InvoiceRecoverFlow } from '../components/InvoiceRecoverFlow';
+import { RecurringDialog } from '../components/RecurringDialog';
 import { STATUS_TONE, displayStatus } from '../components/InvoiceTable';
 import {
   Alert,
@@ -61,6 +62,9 @@ export function InvoiceDetailPage() {
   const sb = useSupabase();
   const { org } = useActiveOrg();
   const invoice = useQuery({ queryKey: ['invoice', id], queryFn: () => getInvoice(sb, id) });
+  const [repeating, setRepeating] = useState(false);
+  const toast = useToast();
+  const navigate = useNavigate();
 
   if (invoice.isPending) return <Skeleton className="h-96" />;
   if (invoice.error) return <Alert tone="danger">{errorMessage(invoice.error)}</Alert>;
@@ -105,13 +109,31 @@ export function InvoiceDetailPage() {
             <p className="mt-1 text-sm text-faint">No client</p>
           )}
         </div>
-        <a
-          href={`/app.html?doc=${inv.id}`}
-          onClick={() => setEditorSyncOrg(org.id)}
-          className={buttonVariants({ variant: 'secondary' })}
-        >
-          <ExternalLink className="h-4 w-4" aria-hidden /> Open in editor
-        </a>
+        <div className="flex flex-wrap gap-2">
+          {inv.doc_type === 'invoice' && (
+            <Button variant="secondary" onClick={() => setRepeating(true)}>
+              <Repeat className="h-4 w-4" aria-hidden /> Repeat
+            </Button>
+          )}
+          <a
+            href={`/app.html?doc=${inv.id}`}
+            onClick={() => setEditorSyncOrg(org.id)}
+            className={buttonVariants({ variant: 'secondary' })}
+          >
+            <ExternalLink className="h-4 w-4" aria-hidden /> Open in editor
+          </a>
+        </div>
+        {repeating && (
+          <RecurringDialog
+            invoiceId={inv.id}
+            onClose={() => setRepeating(false)}
+            onSaved={() => {
+              setRepeating(false);
+              toast('Recurring schedule created');
+              navigate('/recurring');
+            }}
+          />
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
@@ -534,6 +556,12 @@ const ACTION_LABEL: Record<string, string> = {
   'payment.recorded': 'Payment recorded',
   'payment.voided': 'Payment voided',
   'email.sent': 'Email sent',
+  'recurring.created': 'Set to repeat',
+  'recurring.updated': 'Repeat schedule changed',
+  'recurring.paused': 'Repeat schedule paused',
+  'recurring.active': 'Repeat schedule resumed',
+  'recurring.cancelled': 'Repeat schedule cancelled',
+  'recurring.generated': 'Created by a recurring schedule',
   'reminders.paused': 'Reminders paused',
   'reminders.resumed': 'Reminders resumed',
   'reminders.client_opted_out': 'Client opted out of reminders',

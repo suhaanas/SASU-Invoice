@@ -6,13 +6,16 @@ import { errorMessage } from './lib/api';
 import { useAuth } from './lib/auth';
 import { canManage, useOrgs } from './lib/org';
 import { ForgotPasswordPage, LoginPage, RegisterPage, ResetPasswordPage } from './pages/Auth';
+import { AdminPage } from './pages/Admin';
 import { BillingPage } from './pages/Billing';
 import { BrowserPage } from './pages/Browser';
 import { InvitePage } from './pages/Invite';
 import { ClientDetailPage, ClientsPage, NewClientPage } from './pages/Clients';
 import { InvoiceDetailPage } from './pages/InvoiceDetail';
 import { InvoicesPage } from './pages/Invoices';
+import { RecurringPage } from './pages/Recurring';
 import { RemindersPage } from './pages/Reminders';
+import { ReportsPage } from './pages/Reports';
 import { SearchPage } from './pages/Search';
 import { OnboardingPage } from './pages/Onboarding';
 import { OverviewPage } from './pages/Overview';
@@ -88,6 +91,9 @@ export function App() {
             <Route path="/clients/:id" element={<ClientDetailPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/reminders" element={<RemindersPage />} />
+            <Route path="/recurring" element={<RecurringPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/admin" element={<AdminPage />} />
             <Route path="/browser" element={<BrowserPage />} />
             <Route path="/settings/organization" element={<OrganizationSettingsPage />} />
             <Route path="/settings/team" element={<TeamPage />} />
