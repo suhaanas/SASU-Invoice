@@ -68,10 +68,15 @@ execFileSync('supabase', ['config', 'push', '--project-ref', ref, '--yes'], {
 });
 
 // 3. Check ---------------------------------------------------------------------------------------
-const res = await fetch(`${env.VITE_SUPABASE_URL}/auth/v1/settings`, {
-  headers: { apikey: env.VITE_SUPABASE_ANON_KEY },
-});
-const settings = await res.json().catch(() => ({}));
+// Auth settings take a few seconds to apply.
+let settings = {};
+for (let attempt = 0; attempt < 10 && settings.external?.google !== true; attempt++) {
+  if (attempt) await new Promise((r) => setTimeout(r, 3000));
+  const res = await fetch(`${env.VITE_SUPABASE_URL}/auth/v1/settings`, {
+    headers: { apikey: env.VITE_SUPABASE_ANON_KEY },
+  });
+  settings = await res.json().catch(() => ({}));
+}
 if (settings.external?.google !== true) die('Supabase does not report Google as enabled yet.');
 log('Google sign-in is on. The OAuth client must have these settings:');
 explainClient(false);

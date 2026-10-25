@@ -29,6 +29,13 @@ enable_signup = true
 minimum_password_length = 10
 password_requirements = "letters_digits"
 
+# Google sign-in. Values come from .env.local (scripts/setup-google.mjs).
+[auth.external.google]
+enabled = true
+client_id = "env(GOOGLE_CLIENT_ID)"
+secret = "env(GOOGLE_CLIENT_SECRET)"
+skip_nonce_check = false
+
 [auth.rate_limit]
 email_sent = 4
 sign_in_sign_ups = 30
