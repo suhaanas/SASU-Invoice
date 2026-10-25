@@ -67,3 +67,14 @@ entrypoint = "./functions/reminder-worker/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/email-webhook/index.ts"
+
+[functions.billing]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/billing/index.ts"
+
+# Called by Paddle; authenticated by its Paddle-Signature header.
+[functions.billing-webhook]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/billing-webhook/index.ts"

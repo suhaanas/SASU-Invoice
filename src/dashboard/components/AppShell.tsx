@@ -2,6 +2,7 @@ import {
   BellRing,
   Building2,
   Contact,
+  CreditCard,
   Search,
   ChevronsUpDown,
   FileText,
@@ -31,6 +32,7 @@ const NAV = [
   { to: '/browser', label: 'This browser', icon: HardDriveUpload },
   { to: '/settings/organization', label: 'Business settings', icon: Building2, manage: true },
   { to: '/settings/team', label: 'Team', icon: Users },
+  { to: '/settings/billing', label: 'Billing', icon: CreditCard },
   { to: '/settings/account', label: 'Account', icon: User },
 ] as const;
 

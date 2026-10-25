@@ -6,6 +6,7 @@ import { errorMessage } from './lib/api';
 import { useAuth } from './lib/auth';
 import { canManage, useOrgs } from './lib/org';
 import { ForgotPasswordPage, LoginPage, RegisterPage, ResetPasswordPage } from './pages/Auth';
+import { BillingPage } from './pages/Billing';
 import { BrowserPage } from './pages/Browser';
 import { InvitePage } from './pages/Invite';
 import { ClientDetailPage, ClientsPage, NewClientPage } from './pages/Clients';
@@ -91,6 +92,7 @@ export function App() {
             <Route path="/settings/organization" element={<OrganizationSettingsPage />} />
             <Route path="/settings/team" element={<TeamPage />} />
             <Route path="/settings/account" element={<AccountPage />} />
+            <Route path="/settings/billing" element={<BillingPage />} />
           </Route>
         </Route>
       </Route>

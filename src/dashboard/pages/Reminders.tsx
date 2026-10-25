@@ -249,7 +249,14 @@ function AutomationCard({
         }
       />
       <div className="space-y-4 p-5 text-sm">
-        {!planAllows && <Alert tone="warn">Automatic reminders need a Pro or Business plan.</Alert>}
+        {!planAllows && (
+          <Alert tone="warn">
+            Automatic reminders need a Pro or Business plan.{' '}
+            <Link to="/settings/billing" className="font-semibold underline">
+              See plans
+            </Link>
+          </Alert>
+        )}
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Send at (your organization’s time)" hint={`Timezone: ${org.timezone}`}>
             {(p) => (

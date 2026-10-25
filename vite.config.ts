@@ -10,7 +10,8 @@ function netlifyHeaders(): Record<string, string> {
   const toml = readFileSync(resolve(import.meta.dirname, 'netlify.toml'), 'utf8');
   const block = toml.split('[[headers]]')[1] ?? '';
   return Object.fromEntries(
-    [...block.matchAll(/^\s+([\w-]+) = "(.*)"$/gm)].map((m) => [m[1]!, m[2]!]),
+    // TOML escapes quotes inside values (e.g. Permissions-Policy origins).
+    [...block.matchAll(/^\s+([\w-]+) = "(.*)"$/gm)].map((m) => [m[1]!, m[2]!.replace(/\\"/g, '"')]),
   );
 }
 
@@ -90,6 +91,8 @@ export default defineConfig({
         app: resolve(import.meta.dirname, 'app.html'),
         dashboard: resolve(import.meta.dirname, 'dashboard.html'),
         invoice: resolve(import.meta.dirname, 'invoice.html'),
+        pricing: resolve(import.meta.dirname, 'pricing.html'),
+        pay: resolve(import.meta.dirname, 'pay.html'),
       },
     },
   },

@@ -204,6 +204,11 @@ body {
     color: var(--graphite);
 }
 
+.view-message a {
+    color: var(--brand-ink);
+    font-weight: 600;
+}
+
 /* The A4 sheet keeps its true width and is scaled down to fit small screens. */
 .view-sheet-frame {
     overflow: hidden;

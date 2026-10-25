@@ -118,7 +118,9 @@ function PlanCard() {
             />
           </div>
         </div>
-        <p className="text-xs text-faint">Paid plans and billing are coming soon.</p>
+        <Link to="/settings/billing" className="text-sm font-semibold text-brand-ink">
+          Plans and billing
+        </Link>
       </div>
     </Card>
   );

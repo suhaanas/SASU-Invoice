@@ -4,7 +4,7 @@ This describes how SASU Invoice grows from a browser-only invoice editor into a
 multi-tenant SaaS (cloud invoices, clients, teams, RecoverFlow AI reminders and
 subscriptions), and what exists today.
 
-**Status:** Phases 1 (foundation), 2 (core business management) and 3 (RecoverFlow AI) are implemented. Later phases are planned, not built.
+**Status:** Phases 1–4 (foundation, core business management, RecoverFlow AI, subscription billing) are implemented. Phases 5–6 are planned, not built.
 
 ## Principles
 
@@ -37,6 +37,7 @@ Netlify (static, strict CSP)                 Supabase
 | Editor | `app.html`, `src/main-app.ts` | Unchanged when signed out. Optional sync in `src/editor/cloud.ts` (lazy-loads supabase-js). |
 | Dashboard | `dashboard.html`, `src/dashboard/` | React 19, react-router, TanStack Query, Tailwind 4, Lucide. Served under `/dashboard/*`. |
 | Client view | `invoice.html`, `src/main-view.ts` | Vanilla TS, reuses the editor's sheet and PDF code. Opened from share links. |
+| Billing | `supabase/functions/{billing,billing-webhook}`, `pay.html`, `pricing.html` | Paddle checkout, plan changes, webhooks; public pricing page. |
 | RecoverFlow functions | `supabase/functions/{send-email,reminder-worker,email-webhook,ai-assistant}` | Email sending, the reminder queue worker, delivery webhooks, AI assistant. |
 | Shared cloud client | `src/cloud/` | Config (env validation), Supabase client, document API, browser prefs. |
 | Database | `supabase/migrations/` | Schema, RLS, RPCs. |
@@ -159,6 +160,45 @@ changes data: "client says they paid" tells the user to check the bank; "possibl
 dispute" offers a button the user must press. Requests count against the plan's
 monthly AI allowance.
 
+## Subscription billing (Phase 4)
+
+Paddle is the merchant of record: it sells to the customer, charges the right
+VAT or sales tax and pays out to the business, which suits a Sri Lanka-based
+company selling worldwide. Paddle sits behind a `BillingProvider` interface
+(`supabase/functions/_shared/billing.ts`), so another provider can be added
+without touching the app.
+
+```
+Billing page ──► billing (owner only) ──► billing_prepare (role, limits, price id)
+                     ├─ no subscription: create a Paddle transaction → pay.html?_ptxn=… (Paddle.js checkout)
+                     └─ has one: change plan in place (prorated), cancel at period end, resume,
+                        customer portal (payment method), invoice list and PDFs
+Paddle ──► billing-webhook (Paddle-Signature, 5-min window) ──► billing_apply_subscription_event
+```
+
+- **Only signed webhooks change a plan.** Returning from checkout just starts a
+  "waiting for Paddle" state that polls until the webhook lands.
+- **Idempotent and ordered.** Each Paddle event id is applied once
+  (`subscription_events`), and an event older than the last applied one is
+  recorded as stale instead of overwriting newer state.
+- **Bound to one organization.** The org id goes into the checkout's custom
+  data; once a subscription id belongs to an organization, events can't move it.
+- **Prices are data.** `plans` holds names, prices and limits (shown on the
+  pricing page and enforced in SQL); `plans.provider_price_id` maps each plan
+  to the Paddle price for that environment (`supabase/setup/billing-prices.sql`).
+- **Downgrades are checked first.** A plan that would leave the organization
+  above its document or seat limits is refused, with the reason shown.
+- **States.** Paddle `active`, `trialing`, `past_due` (access kept while Paddle
+  retries), `canceled` (access until the paid period ends), `paused` (no paid
+  access). After that the organization is on Free: cloud documents stay
+  readable; new cloud documents, reminders and AI stop.
+- **Exposure.** Provider ids (customer, subscription, price) are never readable
+  from the browser; the event log is visible to the organization's owner only.
+- **Card data** never touches SASU Invoice: checkout runs in Paddle's iframe.
+  The CSP allows `cdn.paddle.com` scripts and `*.paddle.com` frames, and the
+  Permissions-Policy allows the Payment Request API for Paddle's checkout
+  origins only.
+
 ### Locked documents
 
 Once a document is issued (`issued_at` set), a trigger blocks any change except
@@ -184,6 +224,8 @@ cannot be deleted; drafts can (soft delete).
 | Send emails, pause reminders, mark disputes | ✓ | ✓ | ✓ | ✗ |
 | Turn reminders on/off, edit schedule and wording, unblock addresses | ✓ | ✓ | ✗ | ✗ |
 | Read AI usage logs | ✓ | ✓ | ✗ | ✗ |
+| Choose, change or cancel the plan; payment method; billing invoices | ✓ | ✗ | ✗ | ✗ |
+| See the plan and usage | ✓ | ✓ | ✓ | ✗ |
 | Change subscription | billing backend only | | | |
 
 How it is enforced:
@@ -238,6 +280,10 @@ earlier stay quarantined and are never uploaded. Results are reported per docume
 | `RESEND_WEBHOOK_SECRET` | `supabase secrets set` | **Yes** (`whsec_…`) |
 | `WORKER_SECRET` | `supabase secrets set` and Vault (`supabase/setup/schedule-reminders.sql`) | **Yes** |
 | `OPENAI_API_KEY` | `supabase secrets set` | **Yes**; optional, the assistant is off without it |
+| `VITE_PADDLE_CLIENT_TOKEN`, `VITE_PADDLE_ENV` | Netlify build env | No (client-side token; `sandbox` or `live`) |
+| `PADDLE_API_KEY` | `supabase secrets set` | **Yes** |
+| `PADDLE_ENVIRONMENT` | `supabase secrets set` | No (`sandbox` or `live`) |
+| `PADDLE_WEBHOOK_SECRET` | `supabase secrets set` | **Yes** |
 | `OPENAI_MODEL` | `supabase secrets set` | No; a current model with structured outputs (default `gpt-4.1-mini`) |
 | `SUPABASE_DB_URL`, `SUPABASE_PROJECT_REF` | Local `.env.local` for deploys | **Yes** (DB password) |
 
@@ -257,6 +303,12 @@ Without the two `VITE_` variables the build still succeeds: the dashboard shows
    `https://<ref>.supabase.co/functions/v1/email-webhook` for the `email.*` events.
 5b. Scheduler: run `supabase/setup/schedule-reminders.sql` once (pg_cron + pg_net,
    secrets in Vault).
+5c. Billing: in Paddle, create the Pro and Business prices, set the **default
+   payment link** to `https://<site>/pay.html`, approve the domain, and add a
+   notification destination `https://<ref>.supabase.co/functions/v1/billing-webhook`
+   for `subscription.*` and `transaction.*` events. Then run
+   `supabase/setup/billing-prices.sql` and set the Paddle secrets. Use the
+   sandbox for staging and the live account for production.
 6. In Netlify, set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` per deploy context
    (production vs. deploy previews pointing at staging), then deploy.
 7. In Supabase Auth, configure a custom SMTP sender before launch; the built-in
@@ -271,7 +323,7 @@ forward-only; write a new migration to revert a change and test it on staging fi
 | --- | --- |
 | `npm test` | Editor and dashboard unit tests (Vitest + jsdom), including XSS rendering tests. |
 | `npm run test:functions` | All Edge Functions (Deno): auth, validation, server-side totals, CORS, error mapping, Svix signatures, Resend requests and retry classification, the worker loop, manual sends, AI guardrails, redaction and allowance. |
-| `PG_ADMIN_URL=… npm run test:db` | Migrations + 178 SQL checks on plain PostgreSQL with Supabase's auth/storage emulated: cross-tenant isolation, write paths, locked documents, plan limits, invitations, storage, payments ledger rules, share links, dashboard aggregates, and the reminder queue (send hours, weekends, idempotency, leases, backoff, crash recovery, cancellation, opt-out, webhook ordering, suppression, usage limits). |
+| `PG_ADMIN_URL=… npm run test:db` | Migrations + 207 SQL checks on plain PostgreSQL with Supabase's auth/storage emulated: cross-tenant isolation, write paths, locked documents, plan limits, invitations, storage, payments ledger rules, share links, dashboard aggregates, and the reminder queue (send hours, weekends, idempotency, leases, backoff, crash recovery, cancellation, opt-out, webhook ordering, suppression, usage limits) and billing (ownership, downgrade guards, webhook idempotency and ordering, subscription hijack, provider-id exposure). |
 | `npm run functions:check` | The Edge Function's copy of `src/core` is up to date. |
 
 All four run in CI (`.github/workflows/ci.yml`); the database job uses a Postgres
@@ -284,7 +336,7 @@ service container, so no secrets are needed.
 | 1. Foundation | Auth, organizations, roles, invitations, schema + RLS, onboarding, cloud documents, editor sync, browser import | **Done** |
 | 2. Core business | Clients (list, profile, create/edit/archive, balances, "new invoice for client"), payments ledger with void, partially paid / overdue statuses, invoice detail with history, overview KPIs and charts per currency, invoice filters and sorting, header search, share links and client invoice view | **Done** |
 | 3. RecoverFlow AI | Email sending (Resend) with delivery webhooks and suppression, editable templates, reminder schedule on a durable queue (pg_cron, skip-locked leases, idempotency keys, backoff), pause / dispute / client opt-out, AI drafting, rewriting, reply analysis and receivables summary with usage limits | **Done** |
-| 4. Monetization | Paddle (merchant of record) behind a `BillingProvider` interface, signed webhooks → `subscriptions`, entitlements and usage counters, upgrade/downgrade, billing page | Planned |
+| 4. Monetization | Paddle behind a `BillingProvider` interface, checkout, signed idempotent webhooks, upgrade/downgrade with limit checks, cancel/resume, customer portal, billing history, usage display, public pricing page | **Done** |
 | 5. Advanced | Recurring invoices, reports and exports, granular team permissions, super-admin console | Planned |
 | 6. Production readiness | Security review, Playwright E2E, monitoring and alerting, backups and restore drills, performance | Planned |
 
@@ -312,6 +364,9 @@ service container, so no secrets are needed.
   reply into the assistant. Replies go to the business's own inbox.
 - **PDF attachments:** emails link to the private invoice page (with PDF
   download) rather than attaching a PDF.
+- **Paddle.js** can't be version-pinned or self-hosted (Paddle requires its CDN
+  build); it is loaded only on `pay.html`.
+- **Annual billing** isn't offered yet; add yearly prices to `plans` and Paddle.
 - **AI model choice:** `OPENAI_MODEL` defaults to `gpt-4.1-mini`; confirm a current
   model with structured-output support before launch.
 - **Dark mode:** the dashboard, like the editor, is light-only.

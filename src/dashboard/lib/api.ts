@@ -47,6 +47,7 @@ export interface Subscription {
   status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired';
   trial_ends_at: string | null;
   current_period_end: string | null;
+  cancel_at_period_end?: boolean;
 }
 
 export interface Plan {
@@ -54,6 +55,7 @@ export interface Plan {
   name: string;
   price_minor: number;
   currency: string;
+  billing_interval: 'month' | 'year';
   limits: {
     cloud_invoices: number;
     users: number;
@@ -204,10 +206,13 @@ export async function getSubscription(
   const [subRes, plansRes] = await Promise.all([
     sb
       .from('subscriptions')
-      .select('plan_code, status, trial_ends_at, current_period_end')
+      .select('plan_code, status, trial_ends_at, current_period_end, cancel_at_period_end')
       .eq('org_id', orgId)
       .maybeSingle(),
-    sb.from('plans').select('code, name, price_minor, currency, limits').order('sort_order'),
+    sb
+      .from('plans')
+      .select('code, name, price_minor, currency, billing_interval, limits')
+      .order('sort_order'),
   ]);
   if (subRes.error) fail(subRes.error);
   if (plansRes.error) fail(plansRes.error);
@@ -1108,4 +1113,43 @@ export type AiRequest =
 
 export async function askAssistant<T>(sb: SupabaseClient, req: AiRequest): Promise<T> {
   return (await callFunction(sb, 'ai-assistant', { ...req })) as T;
+}
+
+// --- Phase 4: billing ---------------------------------------------------------------------
+
+export async function planChangeProblems(
+  sb: SupabaseClient,
+  orgId: string,
+  plan: string,
+): Promise<string[]> {
+  const { data, error } = await sb.rpc('plan_change_check', { p_org: orgId, p_plan: plan });
+  if (error) fail(error);
+  return data as string[];
+}
+
+export interface BillingInvoice {
+  id: string;
+  billedAt: string | null;
+  status: string;
+  totalMinor: number;
+  currency: string;
+  invoiceNumber: string | null;
+}
+
+type BillingRequest =
+  | { action: 'select_plan'; orgId: string; plan: string }
+  | { action: 'cancel' | 'resume' | 'portal' | 'invoices'; orgId: string }
+  | { action: 'invoice_pdf'; orgId: string; invoiceId: string };
+
+export async function billing<T>(sb: SupabaseClient, req: BillingRequest): Promise<T> {
+  return (await callFunction(sb, 'billing', { ...req })) as T;
+}
+
+export async function countMembers(sb: SupabaseClient, orgId: string): Promise<number> {
+  const { count, error } = await sb
+    .from('organization_members')
+    .select('user_id', { count: 'exact', head: true })
+    .eq('org_id', orgId);
+  if (error) fail(error);
+  return count ?? 0;
 }
