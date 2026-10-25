@@ -1,6 +1,30 @@
 import type { Session, SupabaseClient, User } from '@supabase/supabase-js';
+import { useQuery } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { getSupabase } from '../../cloud/client';
+import { cloudConfig } from '../../cloud/config';
+
+/**
+ * Social sign-in providers switched on in Supabase Auth (public settings
+ * endpoint). A provider shows up in the UI as soon as it's configured; if the
+ * check fails, only email sign-in is offered.
+ */
+export function useAuthProviders(): { google: boolean } {
+  const settings = useQuery({
+    queryKey: ['auth-settings'],
+    queryFn: async () => {
+      const res = await fetch(`${cloudConfig!.url}/auth/v1/settings`, {
+        headers: { apikey: cloudConfig!.anonKey },
+      });
+      if (!res.ok) throw new Error(`auth settings ${res.status}`);
+      return (await res.json()) as { external?: Record<string, boolean> };
+    },
+    enabled: !!cloudConfig,
+    staleTime: 10 * 60_000,
+    retry: false,
+  });
+  return { google: settings.data?.external?.google === true };
+}
 
 interface AuthState {
   sb: SupabaseClient;

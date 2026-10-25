@@ -50,6 +50,13 @@ Resend and Paddle have their own scripts. Put the keys in `.env.local` and run:
   `PADDLE_WEBHOOK_SECRET`. One step is manual: approve the domain under Paddle → Settings →
   Website approval, then set the default payment link to `https://<site>/pay.html`.
 
+- `npm run setup:google` needs `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from a Google Cloud
+  OAuth client of type "Web application". Give that client the origin `https://<site>` and the
+  redirect URI `https://<ref>.supabase.co/auth/v1/callback`. The script adds the provider to
+  `supabase/config.toml`, where both values are read through `env()`, pushes the auth settings,
+  and checks that Google is on. The sign-in pages show "Continue with Google" automatically once
+  Supabase reports Google as enabled.
+
 Both scripts can be re-run safely, and both finish by re-running `setup:supabase` to push
 the secrets and redeploy the functions. The AI assistant stays "coming soon" until
 `OPENAI_API_KEY` is set and an admin turns on the `ai_assistant` switch.

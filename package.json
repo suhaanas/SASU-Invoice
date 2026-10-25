@@ -28,7 +28,8 @@
     "smoke:live": "node --env-file=.env.local scripts/live-smoke.mjs",
     "setup:supabase": "bash scripts/setup-supabase.sh",
     "setup:resend": "node scripts/setup-resend.mjs",
-    "setup:paddle": "node scripts/setup-paddle.mjs"
+    "setup:paddle": "node scripts/setup-paddle.mjs",
+    "setup:google": "node scripts/setup-google.mjs"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.3.0",

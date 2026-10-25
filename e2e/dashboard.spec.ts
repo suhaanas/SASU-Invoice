@@ -47,3 +47,43 @@ test.describe('dashboard (signed out)', () => {
     );
   });
 });
+
+test.describe('Google sign-in', () => {
+  const settings = (google: boolean) => ({ external: { email: true, google } });
+
+  test('the Google button appears once Google is switched on', async ({ page }) => {
+    await page.route('**/auth/v1/settings', (route) => route.fulfill({ json: settings(true) }));
+    let authorize = '';
+    await page.route('**/auth/v1/authorize**', (route) => {
+      authorize = route.request().url();
+      return route.fulfill({ status: 200, contentType: 'text/html', body: 'google' });
+    });
+    await page.goto('/dashboard/login?next=%2Finvoices');
+    await page.getByRole('button', { name: 'Continue with Google' }).click();
+    await expect.poll(() => authorize).toContain('provider=google');
+    const redirect = new URL(authorize).searchParams.get('redirect_to') ?? '';
+    expect(redirect).toMatch(/\/dashboard\/invoices$/);
+  });
+
+  test('without Google, only email sign-in is offered', async ({ page }) => {
+    await page.route('**/auth/v1/settings', (route) => route.fulfill({ json: settings(false) }));
+    await page.goto('/dashboard/register');
+    await expect(page.getByRole('button', { name: 'Create account' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue with Google' })).toHaveCount(0);
+  });
+
+  test('a failed Google sign-in explains what happened', async ({ page }) => {
+    await page.route('**/auth/v1/settings', (route) => route.fulfill({ json: settings(true) }));
+    await page.goto('/dashboard/login?error=access_denied&error_description=User+cancelled');
+    await expect(page.getByRole('alert')).toContainText('Google sign-in didn’t complete');
+  });
+});
+
+test('the password field can be revealed', async ({ page }) => {
+  await page.goto('/dashboard/login');
+  const field = page.getByLabel('Password', { exact: true });
+  await field.fill('secret-123');
+  await expect(field).toHaveAttribute('type', 'password');
+  await page.getByRole('button', { name: 'Show' }).click();
+  await expect(field).toHaveAttribute('type', 'text');
+});
