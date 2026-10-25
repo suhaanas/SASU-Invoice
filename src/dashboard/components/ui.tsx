@@ -214,6 +214,20 @@ export function Alert({
   );
 }
 
+/** Marks a feature that is visible but not available yet. */
+export function ComingSoon({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 rounded-full bg-brand-wash px-2 py-0.5 text-xs font-semibold text-brand-ink',
+        className,
+      )}
+    >
+      Coming soon
+    </span>
+  );
+}
+
 export function Skeleton({ className }: { className?: string }) {
   return <div className={cn('animate-pulse rounded-md bg-hover', className)} aria-hidden />;
 }

@@ -30,8 +30,9 @@ import {
 } from '../lib/api';
 import { useSupabase } from '../lib/auth';
 import { date, money } from '../lib/format';
+import { useAiEnabled } from '../lib/flags';
 import { useActiveOrg } from '../lib/org';
-import { Alert, Button, Field, Input, Select, Textarea } from './ui';
+import { Alert, Button, ComingSoon, Field, Input, Select, Textarea } from './ui';
 
 export interface ComposerPreset {
   kind: EmailKind;
@@ -53,6 +54,7 @@ export function EmailComposer({
 }) {
   const sb = useSupabase();
   const { org } = useActiveOrg();
+  const ai = useAiEnabled();
   const ref = useRef<HTMLDialogElement>(null);
   const templates = useQuery({
     queryKey: ['templates', org.id],
@@ -228,18 +230,26 @@ export function EmailComposer({
               />
             )}
           </Field>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => draft.mutate()}
-            loading={draft.isPending}
-          >
-            <Sparkles className="h-4 w-4" aria-hidden /> Write with AI
-          </Button>
-          <p className="text-xs text-faint">
-            The AI gets no names, emails or amounts, only the type, tone and how late the invoice
-            is. Review the draft before sending.
-          </p>
+          {ai.enabled ? (
+            <>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => draft.mutate()}
+                loading={draft.isPending}
+              >
+                <Sparkles className="h-4 w-4" aria-hidden /> Write with AI
+              </Button>
+              <p className="text-xs text-faint">
+                The AI gets no names, emails or amounts, only the type, tone and how late the
+                invoice is. Review the draft before sending.
+              </p>
+            </>
+          ) : (
+            <p className="flex items-center gap-2 text-xs text-graphite">
+              <Sparkles className="h-4 w-4 text-brand" aria-hidden /> AI drafting <ComingSoon />
+            </p>
+          )}
         </div>
         <div className="border-t border-rule bg-canvas p-5 md:border-l md:border-t-0">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-faint">Preview</p>

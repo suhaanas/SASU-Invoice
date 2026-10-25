@@ -67,3 +67,14 @@ test('the mobile layout uses a navigation drawer', async ({ page }) => {
     await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
   ).toBe(true);
 });
+
+test('AI features show "Coming soon" while the AI switch is off', async ({ page }) => {
+  await signedInOwner(page);
+  await page.goto('/dashboard/');
+  await expect(page.getByText('What needs attention')).toBeVisible();
+  await expect(page.getByText('Coming soon').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /Explain/ })).toHaveCount(0);
+  await page.goto(`/dashboard/invoices/${INVOICE}`);
+  await expect(page.getByRole('button', { name: /Analyze/ })).toHaveCount(0);
+  await expect(page.getByText(/Soon you’ll be able to paste a client’s reply/)).toBeVisible();
+});

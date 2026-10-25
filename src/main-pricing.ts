@@ -89,7 +89,7 @@ const FEATURE_TEXT: Record<string, string> = {
   cloud_storage: 'Cloud storage, clients and payment tracking',
   reminders: 'RecoverFlow automatic payment reminders',
   reminders_advanced: 'Custom reminder schedules and wording',
-  ai_basic: 'AI-written reminders and reply analysis',
+  ai_basic: 'AI-written reminders and reply analysis (coming soon)',
   team: 'Team members with roles',
   priority_support: 'Priority support',
 };

@@ -22,12 +22,14 @@ import {
 } from '../lib/api';
 import { useSupabase } from '../lib/auth';
 import { date, dateTime } from '../lib/format';
+import { useAiEnabled } from '../lib/flags';
 import { useActiveOrg } from '../lib/org';
 import { useToast } from '../lib/toast';
 import { EmailActivity } from './EmailActivity';
 import { EmailComposer, type ComposerPreset } from './EmailComposer';
 import {
   Alert,
+  ComingSoon,
   Badge,
   Button,
   Card,
@@ -342,6 +344,19 @@ function ReplyAssistant({
     onError: (err) => toast(errorMessage(err), 'error'),
   });
   const a = analyze.data;
+  const ai = useAiEnabled();
+
+  if (!ai.enabled) {
+    return (
+      <Card>
+        <CardHeader title="Reply assistant" action={<ComingSoon />} />
+        <p className="px-5 py-4 text-sm text-graphite">
+          Soon you’ll be able to paste a client’s reply here to get a summary, spot disputes and a
+          suggested answer.
+        </p>
+      </Card>
+    );
+  }
 
   return (
     <Card>

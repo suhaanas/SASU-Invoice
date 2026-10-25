@@ -29,6 +29,7 @@ import {
   Button,
   Card,
   CardHeader,
+  ComingSoon,
   EmptyState,
   Field,
   Input,
@@ -61,6 +62,7 @@ import {
 } from '../lib/api';
 import { useAuth, useSupabase } from '../lib/auth';
 import { dateTime } from '../lib/format';
+import { useAiEnabled } from '../lib/flags';
 import { canManage, useActiveOrg } from '../lib/org';
 import { useToast } from '../lib/toast';
 
@@ -575,6 +577,7 @@ function TemplateEditor({
   isCustom: boolean;
   manage: boolean;
 }) {
+  const ai = useAiEnabled();
   const sb = useSupabase();
   const { org } = useActiveOrg();
   const qc = useQueryClient();
@@ -670,28 +673,34 @@ function TemplateEditor({
                 Use default
               </Button>
             )}
-            <span className="ml-auto flex items-center gap-2">
-              <Select
-                aria-label="Rewrite tone"
-                className="h-8 w-auto text-[13px]"
-                value={tone}
-                onChange={(e) => setTone(e.target.value as Tone)}
-              >
-                {TONES.map((t) => (
-                  <option key={t} value={t}>
-                    {TONE_LABELS[t]}
-                  </option>
-                ))}
-              </Select>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => rewrite.mutate()}
-                loading={rewrite.isPending}
-              >
-                <Sparkles className="h-4 w-4" aria-hidden /> Rewrite
-              </Button>
-            </span>
+            {!ai.enabled ? (
+              <span className="ml-auto flex items-center gap-2 text-xs text-graphite">
+                <Sparkles className="h-4 w-4 text-brand" aria-hidden /> AI rewrite <ComingSoon />
+              </span>
+            ) : (
+              <span className="ml-auto flex items-center gap-2">
+                <Select
+                  aria-label="Rewrite tone"
+                  className="h-8 w-auto text-[13px]"
+                  value={tone}
+                  onChange={(e) => setTone(e.target.value as Tone)}
+                >
+                  {TONES.map((t) => (
+                    <option key={t} value={t}>
+                      {TONE_LABELS[t]}
+                    </option>
+                  ))}
+                </Select>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => rewrite.mutate()}
+                  loading={rewrite.isPending}
+                >
+                  <Sparkles className="h-4 w-4" aria-hidden /> Rewrite
+                </Button>
+              </span>
+            )}
           </div>
         )}
       </div>

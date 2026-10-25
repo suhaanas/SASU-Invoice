@@ -38,6 +38,22 @@ tenant isolation against the real project with throwaway users, and cleans up.
 Also run `supabase db advisors --linked`; the only expected warnings are the
 intentional user/anon RPCs. The manual steps are below for reference.
 
+Resend and Paddle have their own scripts. Put the keys in `.env.local` and run:
+
+- `npm run setup:resend` needs `RESEND_API_KEY`, and optionally `RESEND_DOMAIN`. It adds the
+  domain and prints its DNS records until it verifies. Until then it sends from
+  `onboarding@resend.dev`, which only reaches your own Resend address. It also
+  creates the delivery webhook and saves `RESEND_WEBHOOK_SECRET` and `EMAIL_FROM_ADDRESS`.
+- `npm run setup:paddle` needs `PADDLE_API_KEY` and `VITE_PADDLE_CLIENT_TOKEN`. It reads
+  live or sandbox from the key, then creates the Pro and Business products and prices
+  and the notification destination. It also links `plans.provider_price_id` and saves
+  `PADDLE_WEBHOOK_SECRET`. One step is manual: approve the domain under Paddle → Settings →
+  Website approval, then set the default payment link to `https://<site>/pay.html`.
+
+Both scripts can be re-run safely, and both finish by re-running `setup:supabase` to push
+the secrets and redeploy the functions. The AI assistant stays "coming soon" until
+`OPENAI_API_KEY` is set and an admin turns on the `ai_assistant` switch.
+
 Work through these in order. Everything marked **secret** goes into
 `supabase secrets set`, never into Netlify or a `VITE_` variable.
 

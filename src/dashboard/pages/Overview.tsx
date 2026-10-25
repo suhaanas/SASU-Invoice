@@ -22,6 +22,7 @@ import {
   Badge,
   Card,
   CardHeader,
+  ComingSoon,
   EmptyState,
   PageHeader,
   Select,
@@ -46,6 +47,7 @@ import {
 } from '../lib/api';
 import { date, money } from '../lib/format';
 import { useSupabase } from '../lib/auth';
+import { useAiEnabled } from '../lib/flags';
 import { canManage, useActiveOrg } from '../lib/org';
 
 function PlanCard() {
@@ -232,6 +234,7 @@ function ReminderActivity() {
 }
 
 function AiSummary({ currency }: { currency: string }) {
+  const ai = useAiEnabled();
   const sb = useSupabase();
   const { org } = useActiveOrg();
   const explain = useMutation({
@@ -242,6 +245,17 @@ function AiSummary({ currency }: { currency: string }) {
         currency,
       }),
   });
+  if (!ai.enabled) {
+    return (
+      <Card>
+        <CardHeader title="What needs attention" action={<ComingSoon />} />
+        <p className="p-5 text-sm text-graphite">
+          A plain-language AI summary of what you’re owed and what to follow up first is on its way.
+        </p>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader

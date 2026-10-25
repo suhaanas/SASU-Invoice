@@ -26,7 +26,9 @@
     "test:e2e": "playwright test",
     "check:env": "node scripts/check-env.mjs",
     "smoke:live": "node --env-file=.env.local scripts/live-smoke.mjs",
-    "setup:supabase": "bash scripts/setup-supabase.sh"
+    "setup:supabase": "bash scripts/setup-supabase.sh",
+    "setup:resend": "node scripts/setup-resend.mjs",
+    "setup:paddle": "node scripts/setup-paddle.mjs"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.3.0",

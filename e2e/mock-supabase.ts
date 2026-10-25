@@ -298,7 +298,7 @@ const tables: Record<string, Record<string, unknown>[]> = {
   feature_flags: [
     {
       key: 'ai_assistant',
-      enabled: true,
+      enabled: false,
       description: 'RecoverFlow AI drafting and analysis',
       updated_at: '2026-10-01T09:00:00Z',
     },
