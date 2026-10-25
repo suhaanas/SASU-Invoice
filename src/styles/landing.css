@@ -1356,44 +1356,6 @@ input[type='range'] {
     line-height: 1.6;
 }
 
-.workspace-shot {
-    margin: 48px 0 0;
-    overflow: hidden;
-    border-radius: 14px;
-    background: var(--paper);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.8);
-}
-
-.workspace-bar {
-    display: flex;
-    gap: 7px;
-    padding: 9px 12px;
-    background: var(--canvas);
-    border-bottom: 1px solid var(--rule);
-}
-
-.workspace-bar i {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #ff5f57;
-}
-
-.workspace-bar i:nth-child(2) {
-    background: #febc2e;
-}
-
-.workspace-bar i:nth-child(3) {
-    background: #28c840;
-}
-
-.workspace-shot img {
-    display: block;
-    width: 100%;
-    height: auto;
-}
-
 .workspace-points {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
