@@ -1,6 +1,6 @@
 # SASU Invoice
 
-> SASU Invoice is an online invoice generator for freelancers and small businesses. The invoice editor is free, needs no account, and exports clean multi-page PDF and PNG invoices without uploading anything. An optional paid cloud workspace adds clients, payment tracking, share links, team members, recurring invoices, reports and RecoverFlow, which sends automatic email payment reminders.
+> SASU Invoice is invoicing software for freelancers and small businesses. A cloud workspace lets you create and send invoices by email or secure link, track clients and payments, run recurring invoices and reports, invite a team, and let RecoverFlow send automatic payment reminders. It also includes a free invoice editor that needs no account and exports clean multi-page PDF and PNG invoices without uploading anything.
 
 Key facts:
 

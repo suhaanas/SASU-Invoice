@@ -79,6 +79,9 @@ const FALLBACK: Plan[] = [
       'reminders',
       'reminders_advanced',
       'ai_basic',
+      'recurring',
+      'reports_standard',
+      'reports_advanced',
       'team',
       'priority_support',
     ],
@@ -91,6 +94,9 @@ const FEATURE_TEXT: Record<string, string> = {
   reminders: 'RecoverFlow automatic payment reminders',
   reminders_advanced: 'Custom reminder schedules and wording',
   ai_basic: 'AI-written reminders and reply analysis (coming soon)',
+  recurring: 'Recurring invoices',
+  reports_standard: 'Reports with CSV export',
+  reports_advanced: 'Advanced reports',
   team: 'Team members with roles',
   priority_support: 'Priority support',
 };
@@ -117,12 +123,9 @@ function card(plan: Plan): HTMLElement {
     ...(free ? [] : [`${limits.cloud_invoices} cloud invoices`]),
     `${limits.users} ${limits.users === 1 ? 'user' : 'users'}`,
     ...(limits.email_sends_per_month ? [`${limits.email_sends_per_month} emails a month`] : []),
-    ...(limits.ai_requests_per_month
-      ? [`${limits.ai_requests_per_month} AI requests a month`]
-      : []),
     ...plan.features.map((f) => FEATURE_TEXT[f]).filter((t): t is string => !!t),
   ];
-  const price = formatMoney(plan.price_minor, plan.currency, 'en-US').replace(/\.00$/, '');
+  const price = money(plan);
   return el(
     'section',
     {
@@ -153,4 +156,76 @@ function card(plan: Plan): HTMLElement {
   );
 }
 
-void loadPlans().then((plans) => byId('plans').replaceChildren(...plans.map(card)));
+/** Rows of the plan comparison table: label + the cell for one plan. */
+const COMPARE: [string, (plan: Plan) => string][] = [
+  ['Price', (p) => (p.price_minor ? `${money(p)} / ${p.billing_interval}` : 'Free')],
+  ['Users', (p) => String(p.limits.users)],
+  ['Invoice editor with PDF and PNG export', (p) => yes(p, 'local_editor')],
+  ['Cloud invoices', (p) => (p.limits.cloud_invoices ? String(p.limits.cloud_invoices) : '—')],
+  ['Clients and payment tracking', (p) => yes(p, 'cloud_storage')],
+  [
+    'Emails a month',
+    (p) => (p.limits.email_sends_per_month ? String(p.limits.email_sends_per_month) : '—'),
+  ],
+  ['Automatic payment reminders', (p) => yes(p, 'reminders')],
+  ['Custom reminder schedules and wording', (p) => yes(p, 'reminders_advanced')],
+  ['Recurring invoices', (p) => yes(p, 'recurring')],
+  [
+    'Reports',
+    (p) =>
+      p.features.includes('reports_advanced')
+        ? 'Advanced'
+        : p.features.includes('reports_standard')
+          ? 'Standard'
+          : '—',
+  ],
+  ['Team members with roles', (p) => yes(p, 'team')],
+  ['Priority support', (p) => yes(p, 'priority_support')],
+  ['AI assistant', (p) => (p.features.includes('ai_basic') ? 'Coming soon' : '—')],
+];
+
+function money(plan: Plan): string {
+  return formatMoney(plan.price_minor, plan.currency, 'en-US').replace(/\.00$/, '');
+}
+
+function yes(plan: Plan, feature: string): string {
+  return plan.features.includes(feature) ? '✓' : '—';
+}
+
+function compareTable(plans: Plan[]): HTMLElement {
+  return el('table', { class: 'compare' }, [
+    el('caption', { class: 'visually-hidden', text: 'Compare plans' }),
+    el('thead', {}, [
+      el('tr', {}, [
+        el('th', { attrs: { scope: 'col' }, text: 'Feature' }),
+        ...plans.map((p) => el('th', { attrs: { scope: 'col' }, text: p.name })),
+      ]),
+    ]),
+    el(
+      'tbody',
+      {},
+      COMPARE.map(([label, cell]) =>
+        el('tr', {}, [
+          el('th', { attrs: { scope: 'row' }, text: label }),
+          ...plans.map((p) => {
+            const value = cell(p);
+            return el('td', {
+              text: value,
+              attrs:
+                value === '✓'
+                  ? { 'aria-label': 'Included' }
+                  : value === '—'
+                    ? { 'aria-label': 'Not included' }
+                    : {},
+            });
+          }),
+        ]),
+      ),
+    ),
+  ]);
+}
+
+void loadPlans().then((plans) => {
+  byId('plans').replaceChildren(...plans.map(card));
+  byId('compare').replaceChildren(compareTable(plans));
+});

@@ -16,6 +16,7 @@ import { currencyDigits } from '../../core/money';
 import { loadInvoices } from '../../core/storage';
 import { AgingChart, MonthlyChart } from '../components/Charts';
 import { EmailActivity } from '../components/EmailActivity';
+import { GettingStarted } from '../components/GettingStarted';
 import {
   Alert,
   Button,
@@ -482,6 +483,8 @@ export function OverviewPage() {
           </>
         }
       />
+
+      <GettingStarted />
 
       {list.length > 1 && (
         <div className="mb-4 flex items-center gap-2 text-sm">

@@ -129,7 +129,7 @@ test('terms, privacy and refund policies are linked from the landing and pricing
       ['/refunds.html', 'Refund policy'],
     ] as const) {
       await page.goto(start);
-      await page.locator(`a[href="${link}"]`).first().click();
+      await page.locator(`a[href="${link}"]:visible`).first().click();
       await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
     }
   }
@@ -157,4 +157,57 @@ test('search and AI metadata: FAQ schema matches the page, llms.txt and social i
   expect(await llms.text()).toContain('# SASU Invoice');
   const og = await request.get('/images/og-image.jpg');
   expect(og.headers()['content-type']).toContain('image/jpeg');
+});
+
+test('the homepage leads with the trial and keeps the free editor one click away', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Invoicing that gets you paid.');
+  const hero = page.locator('.hero');
+  await expect(hero.getByRole('link', { name: 'Start free trial' })).toHaveAttribute(
+    'href',
+    '/dashboard/register',
+  );
+  await expect(hero.getByRole('link', { name: 'Make a free invoice' })).toHaveAttribute(
+    'href',
+    '/app.html',
+  );
+});
+
+test('pricing compares plans and its billing FAQ matches the structured data', async ({ page }) => {
+  await page.route('**/rest/v1/plans**', (route) => route.abort());
+  await page.goto('/pricing.html');
+  const table = page.getByRole('table');
+  await expect(table.getByRole('columnheader')).toHaveText(['Feature', 'Free', 'Pro', 'Business']);
+  const row = (name: string) => table.getByRole('row', { name: new RegExp(`^${name}`) });
+  await expect(row('Users').getByRole('cell')).toHaveText(['1', '1', '5']);
+  await expect(row('Recurring invoices').getByRole('cell')).toHaveText(['—', '✓', '✓']);
+  await expect(row('AI assistant').getByRole('cell')).toHaveText([
+    '—',
+    'Coming soon',
+    'Coming soon',
+  ]);
+
+  const ld = JSON.parse(
+    (await page.locator('script[type="application/ld+json"]').textContent()) ?? '{}',
+  ) as { mainEntity: { name: string }[] };
+  const visible = await page.locator('.pricing-faq summary').allTextContents();
+  expect(ld.mainEntity.map((q) => q.name)).toEqual(visible.map((t) => t.trim()));
+});
+
+test('after a download, the editor suggests a workspace to get the invoice paid', async ({
+  page,
+}) => {
+  await page.goto('/app.html');
+  await expect(page.locator('#upsellLink')).toBeVisible();
+  await page.locator('[data-action="pdf"]').first().click();
+  const card = page.getByRole('complementary', { name: 'Want this invoice paid on time?' });
+  await expect(card).toBeVisible({ timeout: 15000 });
+  await expect(card.getByRole('link', { name: 'Start free trial' })).toHaveAttribute(
+    'href',
+    '/dashboard/register?next=%2Fbrowser',
+  );
+  await card.getByRole('button', { name: 'Close' }).click();
+  await expect(card).toBeHidden();
 });

@@ -77,6 +77,7 @@
         </div>
 
         <div class="tb-actions">
+            <a class="btn btn-ghost upsell-link" id="upsellLink" href="/dashboard/register" hidden><svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3v14M6 7.5C6 5.6 7.8 4.5 10 4.5s4 1 4 2.8-1.6 2.4-4 2.7-4 1.1-4 2.9 1.8 2.6 4 2.6 4-1 4-2.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span>Get paid faster</span></a>
             <a class="btn btn-ghost" id="dashboardLink" href="/dashboard/" hidden><svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="3" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="11" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="11" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.6"/></svg><span>Dashboard</span></a>
             <button type="button" class="btn btn-ghost" id="invoicesBtn" title="Your invoices (⌘K)"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 5h12M4 10h12M4 15h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span>Invoices</span></button>
             <button type="button" class="btn btn-ghost" id="newBtn"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>New</span></button>
@@ -583,6 +584,13 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <aside class="upsell-card" id="upsellCard" aria-labelledby="upsellTitle" hidden>
+        <button type="button" class="upsell-close" id="upsellClose" aria-label="Close">×</button>
+        <p class="upsell-title" id="upsellTitle">Want this invoice paid on time?</p>
+        <p class="upsell-text">With a SASU Invoice workspace you can email it, see when it’s paid, and let automatic
+            reminders chase it for you. Free for 14 days, no card needed.</p>
+        <a class="btn btn-primary upsell-cta" id="upsellCta" href="/dashboard/register?next=%2Fbrowser">Start free trial</a>
+    </aside>
 
 </body>
 

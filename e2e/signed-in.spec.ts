@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { CLIENT, INVOICE, signedInOwner } from './mock-supabase';
+import { BASE, CLIENT, INVOICE, ORG, signedInOwner } from './mock-supabase';
 
 /**
  * Every signed-in dashboard screen renders with realistic data and without
@@ -77,4 +77,51 @@ test('AI features show "Coming soon" while the AI switch is off', async ({ page 
   await page.goto(`/dashboard/invoices/${INVOICE}`);
   await expect(page.getByRole('button', { name: /Analyze/ })).toHaveCount(0);
   await expect(page.getByText(/Soon you’ll be able to paste a client’s reply/)).toBeVisible();
+});
+
+test('the getting-started checklist shows what is left and can be hidden', async ({ page }) => {
+  await signedInOwner(page);
+  await page.goto('/dashboard/');
+  const checklist = page.getByRole('region', { name: 'Get set up' });
+  await expect(page.getByRole('heading', { name: 'Get set up' })).toBeVisible();
+  // The fixture has business details, clients, invoices and reminders, but no logo.
+  await expect(checklist.getByText('Upload your logo (to do)')).toBeAttached();
+  await expect(checklist.getByText('Add your business details (done)')).toBeAttached();
+  await expect(checklist.getByRole('link', { name: 'Upload logo' })).toHaveAttribute(
+    'href',
+    '/dashboard/settings/organization',
+  );
+  await page.getByRole('button', { name: 'Hide checklist' }).click();
+  await expect(page.getByRole('heading', { name: 'Get set up' })).toBeHidden();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Studio North', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Get set up' })).toBeHidden();
+});
+
+test('a new account sets up its workspace in one short form', async ({ page }) => {
+  await signedInOwner(page);
+  let created = false;
+  // No memberships until the organization is created.
+  await page.route(`${BASE}/rest/v1/organization_members**`, (route, req) =>
+    created || req.method() !== 'GET' ? route.fallback() : route.fulfill({ json: [] }),
+  );
+  let body: Record<string, unknown> = {};
+  await page.route(`${BASE}/rest/v1/rpc/create_organization`, (route) => {
+    body = route.request().postDataJSON() as Record<string, unknown>;
+    created = true;
+    return route.fulfill({ json: ORG });
+  });
+  await page.goto('/dashboard/');
+  await expect(page).toHaveURL(/\/dashboard\/onboarding/);
+  await expect(page.getByRole('heading', { name: 'Set up your workspace' })).toBeVisible();
+  await page.getByLabel('Company or trading name').fill('Harbour Design');
+  await page.getByLabel('Country').selectOption('LK');
+  await expect(page.getByLabel('Default currency')).toHaveValue('LKR');
+  await page.getByRole('button', { name: 'Create workspace' }).click();
+  await expect(page.getByRole('heading', { name: 'You’re all set' })).toBeVisible();
+  expect(body).toMatchObject({ p_name: 'Harbour Design', p_country: 'LK', p_currency: 'LKR' });
+  await expect(page.getByRole('link', { name: /Create your first invoice/ })).toHaveAttribute(
+    'href',
+    '/app.html',
+  );
 });

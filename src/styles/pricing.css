@@ -81,3 +81,96 @@
 .plan .view-btn {
     width: 100%;
 }
+
+/* Comparison table and billing FAQ */
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.compare-wrap,
+.pricing-faq {
+    margin-top: 48px;
+}
+
+.compare-wrap h2,
+.pricing-faq h2 {
+    margin: 0 0 16px;
+    font-family: var(--font-display);
+    font-size: 22px;
+}
+
+.compare-scroll {
+    overflow-x: auto;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+}
+
+.compare {
+    width: 100%;
+    min-width: 520px;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.compare th,
+.compare td {
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--rule);
+    text-align: center;
+}
+
+.compare tr:last-child th,
+.compare tr:last-child td {
+    border-bottom: 0;
+}
+
+.compare thead th {
+    font-family: var(--font-display);
+    font-size: 15px;
+    background: var(--canvas);
+}
+
+.compare tbody th {
+    font-weight: 500;
+    text-align: left;
+    color: var(--graphite);
+}
+
+.compare thead th:first-child {
+    text-align: left;
+}
+
+.compare td {
+    color: var(--ink);
+    font-weight: 500;
+}
+
+.pricing-faq details {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+}
+
+.pricing-faq summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.pricing-faq details p {
+    margin: 10px 0 0;
+    color: var(--graphite);
+    line-height: 1.6;
+}
+
+.pricing-faq a {
+    color: var(--brand-ink);
+}

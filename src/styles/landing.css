@@ -1517,3 +1517,14 @@ input[type='range'] {
     color: var(--accent-ink);
     font-weight: 600;
 }
+
+.closing-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.privacy a {
+    color: var(--accent-ink);
+    font-weight: 600;
+}
