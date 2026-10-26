@@ -46,7 +46,8 @@ import { useAuth, useSupabase } from '../lib/auth';
 import { canManage, useActiveOrg, useOrgs } from '../lib/org';
 import { COUNTRIES, CURRENCIES, timezones } from '../lib/options';
 import { useToast } from '../lib/toast';
-import { MIN_PASSWORD } from './Auth';
+import { PasswordChecklist } from './Auth';
+import { passwordProblem } from '../../core/password';
 
 // --- Business settings ---------------------------------------------------------
 
@@ -811,13 +812,15 @@ export function AccountPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const changePassword = useMutation({
     mutationFn: async () => {
-      if (password.length < MIN_PASSWORD)
-        throw new Error(`Use at least ${MIN_PASSWORD} characters.`);
+      const problem = passwordProblem(password, user!.email ?? '');
+      if (problem) throw new Error(problem);
       const { error } = await sb.auth.updateUser({ password });
       if (error)
         throw new Error(
           error.code === 'same_password' ? 'Choose a different password.' : error.message,
         );
+      // Other devices signed in with the old password are signed out.
+      await sb.auth.signOut({ scope: 'others' });
     },
     onSuccess: () => {
       setPassword('');
@@ -861,7 +864,7 @@ export function AccountPage() {
             }}
           >
             <div className="min-w-60 flex-1">
-              <Field label="New password" hint={`At least ${MIN_PASSWORD} characters.`}>
+              <Field label="New password">
                 {(p) => (
                   <Input
                     {...p}
@@ -876,6 +879,9 @@ export function AccountPage() {
             <Button type="submit" variant="secondary" loading={changePassword.isPending}>
               Change password
             </Button>
+            <div className="basis-full pt-2">
+              <PasswordChecklist password={password} email={user!.email ?? ''} />
+            </div>
           </form>
         </Card>
 

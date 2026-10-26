@@ -11,8 +11,9 @@ import productOverview from '../assets/product-overview.webp';
 import { Logo } from '../components/AppShell';
 import { Alert, Button, Field, Input } from '../components/ui';
 import { useAuth, useAuthProviders } from '../lib/auth';
+import { MIN_PASSWORD, passwordProblem, passwordRules } from '../../core/password';
 
-export const MIN_PASSWORD = 10;
+export { MIN_PASSWORD };
 
 /** Only same-app relative paths are allowed as post-login destinations. */
 export function safeNext(raw: string | null): string {
@@ -21,13 +22,19 @@ export function safeNext(raw: string | null): string {
 
 const appUrl = (path: string) => `${location.origin}/dashboard${path}`;
 
-/** Rough guide only; the server enforces the real rules. */
-export function passwordStrength(pw: string): { score: number; label: string; bar: string } {
-  const classes = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter((r) => r.test(pw)).length;
-  if (pw.length < MIN_PASSWORD || !/[A-Za-z]/.test(pw) || !/\d/.test(pw))
-    return { score: 1, label: 'Too weak', bar: 'bg-danger' };
-  if (pw.length >= 14 && classes >= 3) return { score: 3, label: 'Strong', bar: 'bg-ok' };
-  return { score: 2, label: 'Good', bar: 'bg-warn' };
+/** Live checklist of the password rules under a new-password field. */
+export function PasswordChecklist({ password, email = '' }: { password: string; email?: string }) {
+  if (!password) return null;
+  return (
+    <ul className="-mt-2 grid gap-1 text-xs sm:grid-cols-2" aria-label="Password requirements">
+      {passwordRules(password, email).map((r) => (
+        <li key={r.id} className={r.ok ? 'text-ok' : 'text-graphite'}>
+          <span aria-hidden>{r.ok ? '✓' : '○'}</span> {r.label}
+          <span className="sr-only">{r.ok ? ' (met)' : ' (not met)'}</span>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 function authMessage(err: { message?: string; code?: string } | null): string {
@@ -39,7 +46,7 @@ function authMessage(err: { message?: string; code?: string } | null): string {
     case 'user_already_exists':
       return 'An account with this email already exists. Try signing in.';
     case 'weak_password':
-      return `Choose a stronger password (at least ${MIN_PASSWORD} characters, not a common one).`;
+      return `Choose a stronger password: at least ${MIN_PASSWORD} characters with upper- and lowercase letters, a number and a symbol.`;
     case 'over_request_rate_limit':
     case 'over_email_send_rate_limit':
       return 'Too many attempts. Please wait a minute and try again.';
@@ -361,14 +368,13 @@ export function RegisterPage() {
   const [busy, setBusy] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const next = safeNext(params.get('next'));
-  const strength = passwordStrength(password);
 
   if (session) return <Navigate to={next} replace />;
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (password.length < MIN_PASSWORD)
-      return setError(`Use at least ${MIN_PASSWORD} characters for your password.`);
+    const problem = passwordProblem(password, email.trim());
+    if (problem) return setError(problem);
     if (!accepted) return setError('Please accept the terms and privacy notice to continue.');
     setBusy(true);
     setError(null);
@@ -445,7 +451,7 @@ export function RegisterPage() {
         </Field>
         <Field
           label="Password"
-          hint={`At least ${MIN_PASSWORD} characters, with letters and numbers.`}
+          hint={`At least ${MIN_PASSWORD} characters with upper- and lowercase letters, a number and a symbol.`}
         >
           {(p) => (
             <PasswordInput
@@ -458,19 +464,7 @@ export function RegisterPage() {
             />
           )}
         </Field>
-        {password && (
-          <div className="-mt-2 flex items-center gap-2" aria-live="polite">
-            <div className="flex flex-1 gap-1" aria-hidden>
-              {[1, 2, 3].map((n) => (
-                <span
-                  key={n}
-                  className={`h-1 flex-1 rounded-full ${n <= strength.score ? strength.bar : 'bg-rule'}`}
-                />
-              ))}
-            </div>
-            <span className="w-16 text-right text-xs text-graphite">{strength.label}</span>
-          </div>
-        )}
+        <PasswordChecklist password={password} email={email.trim()} />
         <label className="flex items-start gap-2 text-sm text-graphite">
           <input
             type="checkbox"
@@ -580,10 +574,13 @@ export function ResetPasswordPage() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (password.length < MIN_PASSWORD) return setError(`Use at least ${MIN_PASSWORD} characters.`);
+    const problem = passwordProblem(password, session?.user.email ?? '');
+    if (problem) return setError(problem);
     setBusy(true);
     setError(null);
     const { error: err } = await sb.auth.updateUser({ password });
+    // Other devices signed in with the old password are signed out.
+    if (!err) await sb.auth.signOut({ scope: 'others' });
     setBusy(false);
     if (err) setError(authMessage(err));
     else navigate('/', { replace: true });
@@ -593,11 +590,10 @@ export function ResetPasswordPage() {
     <AuthLayout title="Choose a new password">
       <form onSubmit={submit} className="space-y-4" noValidate>
         {error && <Alert tone="danger">{error}</Alert>}
-        <Field label="New password" hint={`At least ${MIN_PASSWORD} characters.`}>
+        <Field label="New password">
           {(p) => (
-            <Input
+            <PasswordInput
               {...p}
-              type="password"
               autoComplete="new-password"
               required
               minLength={MIN_PASSWORD}
@@ -606,6 +602,7 @@ export function ResetPasswordPage() {
             />
           )}
         </Field>
+        <PasswordChecklist password={password} email={session?.user.email ?? ''} />
         <Button type="submit" className="w-full" loading={busy || loading}>
           Update password
         </Button>

@@ -33,9 +33,15 @@ test.describe('dashboard (signed out)', () => {
     });
     await page.goto('/dashboard/register');
     await page.getByLabel('Work email').fill('owner@studio.test');
-    await page.getByLabel('Password').fill('short');
+    await page.getByLabel('Password', { exact: true }).fill('short');
     await page.getByRole('button', { name: 'Create account' }).click();
-    await expect(page.getByRole('alert')).toContainText('at least 10 characters');
+    await expect(page.getByRole('alert')).toContainText('at least 12 characters');
+    // The checklist shows every rule while typing.
+    await page.getByLabel('Password', { exact: true }).fill('Harbour-Lights-77');
+    const rules = page.getByRole('list', { name: 'Password requirements' });
+    await expect(rules.getByText('(not met)')).toHaveCount(0);
+    await page.getByLabel('Password', { exact: true }).fill('Password1234!');
+    await expect(rules.getByText(/No common words/)).toContainText('(not met)');
     expect(called).toBe(false);
   });
 
