@@ -31,7 +31,8 @@ import {
   type Plan,
   type Subscription,
 } from '../lib/api';
-import { useSupabase } from '../lib/auth';
+import { useAuth, useSupabase } from '../lib/auth';
+import { saveCheckoutPrefill } from '../../cloud/checkout';
 import { date, money } from '../lib/format';
 import { useActiveOrg } from '../lib/org';
 import { useToast } from '../lib/toast';
@@ -74,6 +75,7 @@ function statusLine(
 
 export function BillingPage() {
   const sb = useSupabase();
+  const { user } = useAuth();
   const active = useActiveOrg();
   const { org } = active;
   const owner = active.role === 'owner';
@@ -138,6 +140,7 @@ export function BillingPage() {
     onSuccess: (res) => {
       setConfirm(null);
       if (res.checkoutUrl) {
+        saveCheckoutPrefill({ email: user?.email ?? '', country: org.country ?? '' });
         location.assign(res.checkoutUrl);
         return;
       }

@@ -10,12 +10,43 @@
     <script type="module" src="/src/main-pay.ts"></script>
 </head>
 
-<body>
-    <main class="view-wrap">
-        <div id="view" class="view-card view-message" aria-live="polite">
-            <h1>Opening secure checkout…</h1>
-            <p>Payments are handled by Paddle, our reseller and merchant of record.</p>
+<body class="pay-body">
+    <main class="pay-wrap">
+        <a class="view-brand" href="/dashboard/settings/billing">
+            <svg width="20" height="20" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                <rect width="22" height="22" rx="6" fill="#16181D" />
+                <path d="M6 7h10M6 11h7M6 15h5" stroke="#fff" stroke-width="2" stroke-linecap="round" />
+                <circle cx="17" cy="15" r="3" fill="#5B5EF4" />
+            </svg>
+            Back to billing
+        </a>
+
+        <div class="pay-layout" id="payLayout">
+            <section class="pay-summary" aria-labelledby="sumTitle">
+                <p class="pay-eyebrow">Order summary</p>
+                <h1 id="sumTitle"><span id="sumPlan">SASU Invoice</span></h1>
+                <p class="pay-price" id="sumPrice"></p>
+                <dl class="pay-totals" id="summaryTotals" hidden>
+                    <div><dt>Subtotal</dt><dd id="sumSubtotal"></dd></div>
+                    <div><dt>Tax</dt><dd id="sumTax"></dd></div>
+                    <div class="pay-total"><dt>Due today</dt><dd id="sumTotal"></dd></div>
+                </dl>
+                <ul class="pay-points">
+                    <li>Cancel any time from Settings → Billing</li>
+                    <li>14-day money-back guarantee</li>
+                    <li>Tax is worked out for your country by Paddle</li>
+                </ul>
+                <p class="pay-note">Payments are processed securely by Paddle.com, our Merchant of Record. Your card
+                    details never reach our servers. <a href="/terms.html">Terms</a> · <a
+                        href="/refunds.html">Refunds</a></p>
+            </section>
+            <section class="pay-form" aria-label="Payment">
+                <p class="pay-loading" id="payLoading">Loading secure checkout…</p>
+                <div class="pay-frame"></div>
+            </section>
         </div>
+
+        <div id="view" class="view-card view-message" aria-live="polite" hidden></div>
     </main>
 </body>
 

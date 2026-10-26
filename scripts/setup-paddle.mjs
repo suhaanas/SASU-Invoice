@@ -79,6 +79,8 @@ for (const plan of PLANS) {
       description: 'Monthly',
       unit_price: { amount: plan.amount, currency_code: 'USD' },
       billing_cycle: { interval: 'month', frequency: 1 },
+      // One subscription per workspace: no quantity stepper at checkout.
+      quantity: { minimum: 1, maximum: 1 },
       custom_data: { sasu_plan: plan.code },
     });
   }
