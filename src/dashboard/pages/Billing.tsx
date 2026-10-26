@@ -35,6 +35,7 @@ import { useAuth, useSupabase } from '../lib/auth';
 import { saveCheckoutPrefill } from '../../cloud/checkout';
 import { date, money } from '../lib/format';
 import { useActiveOrg } from '../lib/org';
+import { useLiveStatus } from '../lib/realtime';
 import { useToast } from '../lib/toast';
 
 const PAID_STATUSES = new Set(['active', 'past_due', 'canceled']);
@@ -102,17 +103,19 @@ export function BillingPage() {
     !!plan.data?.sub &&
     PAID_STATUSES.has(plan.data.sub.status) &&
     (waitingFrom === null || currentKey !== waitingFrom);
-  // Poll until the webhook lands (or for two minutes).
+  // Wait for the webhook to land (or two minutes). With live updates on, the
+  // change arrives by itself; otherwise poll.
   const { refetch } = plan;
+  const live = useLiveStatus() === 'live';
   useEffect(() => {
     if (!waiting || confirmed) return;
-    const poll = setInterval(() => void refetch(), 4000);
+    const poll = live ? undefined : setInterval(() => void refetch(), 4000);
     const stop = setTimeout(() => setWaiting(false), 120_000);
     return () => {
       clearInterval(poll);
       clearTimeout(stop);
     };
-  }, [waiting, confirmed, refetch]);
+  }, [waiting, confirmed, refetch, live]);
   const startWaiting = () => {
     setWaitingFrom(currentKey);
     setWaiting(true);

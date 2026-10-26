@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { BASE, CLIENT, INVOICE, ORG, signedInOwner } from './mock-supabase';
+import { BASE, CLIENT, INVOICE, ORG, pushRealtime, signedInOwner } from './mock-supabase';
 
 /**
  * Every signed-in dashboard screen renders with realistic data and without
@@ -138,4 +138,19 @@ test('the dashboard logo goes to the homepage, which knows you are signed in', a
   await expect(page.locator('.nav').getByRole('link', { name: 'Sign in' })).toBeHidden();
   await goToDashboard.click();
   await expect(page.getByRole('heading', { name: 'Studio North', level: 1 })).toBeVisible();
+});
+
+test('live updates: a change elsewhere refreshes the open dashboard', async ({ page }) => {
+  await signedInOwner(page);
+  let summaryCalls = 0;
+  page.on('request', (r) => {
+    if (r.url().includes('/rest/v1/rpc/dashboard_summary')) summaryCalls++;
+  });
+  await page.goto('/dashboard/');
+  await expect(page.getByText('Live', { exact: true })).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  const before = summaryCalls;
+  // e.g. a payment recorded by a teammate in another browser.
+  pushRealtime(page, { table: 'invoice_payments', op: 'INSERT', id: 'x' });
+  await expect.poll(() => summaryCalls).toBeGreaterThan(before);
 });

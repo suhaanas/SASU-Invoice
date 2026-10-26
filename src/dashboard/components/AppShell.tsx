@@ -27,6 +27,7 @@ import { canManage, useActiveOrg, useOrgs } from '../lib/org';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIsPlatformAdmin } from '../lib/admin';
 import { cn } from './ui';
+import { RealtimeContext, useOrgRealtime, type LiveStatus } from '../lib/realtime';
 
 const NAV = [
   { to: '/', label: 'Overview', icon: LayoutDashboard, end: true },
@@ -279,62 +280,81 @@ function HeaderSearch() {
   );
 }
 
+function LiveIndicator({ status }: { status: LiveStatus }) {
+  if (status === 'off') return null;
+  const live = status === 'live';
+  return (
+    <span
+      className="hidden items-center gap-1.5 text-xs font-medium text-graphite sm:flex"
+      title={live ? 'Changes appear here as they happen' : 'Connecting to live updates…'}
+    >
+      <span className={cn('h-2 w-2 rounded-full', live ? 'bg-ok' : 'bg-faint')} aria-hidden />
+      {live ? 'Live' : 'Connecting'}
+    </span>
+  );
+}
+
 export function AppShell() {
   // Drawer links close it themselves (Sidebar onNavigate).
   const [drawer, setDrawer] = useState(false);
+  const { org } = useActiveOrg();
+  const live = useOrgRealtime(org.id);
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[240px_1fr] print:block">
-      <aside className="hidden border-r border-rule bg-paper lg:block print:hidden">
-        <div className="flex h-14 items-center border-b border-rule px-5">
-          <Logo />
-        </div>
-        <Sidebar />
-      </aside>
-
-      {drawer && (
-        <div
-          className="fixed inset-0 z-40 lg:hidden"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Navigation"
-        >
-          <div className="absolute inset-0 bg-ink/40" onClick={() => setDrawer(false)} />
-          <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-paper shadow-xl">
-            <div className="flex h-14 items-center justify-between border-b border-rule px-4">
-              <Logo />
-              <button
-                type="button"
-                className="rounded-lg p-2 hover:bg-hover"
-                onClick={() => setDrawer(false)}
-                aria-label="Close navigation"
-              >
-                <X className="h-5 w-5" aria-hidden />
-              </button>
-            </div>
-            <Sidebar onNavigate={() => setDrawer(false)} />
+    <RealtimeContext.Provider value={live}>
+      <div className="min-h-dvh lg:grid lg:grid-cols-[240px_1fr] print:block">
+        <aside className="hidden border-r border-rule bg-paper lg:block print:hidden">
+          <div className="flex h-14 items-center border-b border-rule px-5">
+            <Logo />
           </div>
-        </div>
-      )}
+          <Sidebar />
+        </aside>
 
-      <div className="min-w-0">
-        <header className="sticky top-0 z-30 flex h-14 print:hidden items-center gap-2 border-b border-rule bg-paper/90 px-4 backdrop-blur lg:px-8">
-          <button
-            type="button"
-            className="rounded-lg p-2 hover:bg-hover lg:hidden"
-            onClick={() => setDrawer(true)}
-            aria-label="Open navigation"
+        {drawer && (
+          <div
+            className="fixed inset-0 z-40 lg:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation"
           >
-            <Menu className="h-5 w-5" aria-hidden />
-          </button>
-          <OrgSwitcher />
-          <HeaderSearch />
-          <AccountMenu />
-        </header>
-        <main className="mx-auto max-w-6xl px-4 py-6 lg:px-8 lg:py-8">
-          <Outlet />
-        </main>
+            <div className="absolute inset-0 bg-ink/40" onClick={() => setDrawer(false)} />
+            <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-paper shadow-xl">
+              <div className="flex h-14 items-center justify-between border-b border-rule px-4">
+                <Logo />
+                <button
+                  type="button"
+                  className="rounded-lg p-2 hover:bg-hover"
+                  onClick={() => setDrawer(false)}
+                  aria-label="Close navigation"
+                >
+                  <X className="h-5 w-5" aria-hidden />
+                </button>
+              </div>
+              <Sidebar onNavigate={() => setDrawer(false)} />
+            </div>
+          </div>
+        )}
+
+        <div className="min-w-0">
+          <header className="sticky top-0 z-30 flex h-14 print:hidden items-center gap-2 border-b border-rule bg-paper/90 px-4 backdrop-blur lg:px-8">
+            <button
+              type="button"
+              className="rounded-lg p-2 hover:bg-hover lg:hidden"
+              onClick={() => setDrawer(true)}
+              aria-label="Open navigation"
+            >
+              <Menu className="h-5 w-5" aria-hidden />
+            </button>
+            <OrgSwitcher />
+            <HeaderSearch />
+            <LiveIndicator status={live} />
+            <AccountMenu />
+          </header>
+          <main className="mx-auto max-w-6xl px-4 py-6 lg:px-8 lg:py-8">
+            <Outlet />
+          </main>
+        </div>
       </div>
-    </div>
+    </RealtimeContext.Provider>
   );
 }

@@ -6,7 +6,7 @@
  * signed-in session. It is a rendering harness, not a security test: access
  * rules are covered by the SQL suite.
  */
-import type { Page, Route } from '@playwright/test';
+import type { Page, Route, WebSocketRoute } from '@playwright/test';
 
 export const BASE = 'https://e2e-placeholder.supabase.co';
 export const USER = 'aaaaaaaa-0000-4000-8000-000000000001';
@@ -504,8 +504,66 @@ function session() {
   };
 }
 
+/**
+ * A tiny stand-in for the Realtime (Phoenix) socket: accepts channel joins and
+ * heartbeats, and lets tests push broadcasts with `pushRealtime`.
+ */
+const sockets = new WeakMap<Page, WebSocketRoute>();
+type PhxMessage = {
+  join_ref: string | null;
+  ref: string | null;
+  topic: string;
+  event: string;
+  payload: unknown;
+};
+const decode = (raw: string): PhxMessage => {
+  const m = JSON.parse(raw) as unknown;
+  if (Array.isArray(m)) {
+    const [join_ref, ref, topic, event, payload] = m as [string, string, string, string, unknown];
+    return { join_ref, ref, topic, event, payload };
+  }
+  return m as PhxMessage;
+};
+const encode = (m: PhxMessage) => JSON.stringify([m.join_ref, m.ref, m.topic, m.event, m.payload]);
+
+async function mockRealtime(page: Page): Promise<void> {
+  await page.routeWebSocket(/\/realtime\/v1\/websocket/, (ws) => {
+    sockets.set(page, ws);
+    ws.onMessage((raw) => {
+      if (typeof raw !== 'string') return;
+      const m = decode(raw);
+      if (m.event === 'phx_join' || m.event === 'heartbeat' || m.event === 'access_token')
+        ws.send(
+          encode({
+            join_ref: m.join_ref,
+            ref: m.ref,
+            topic: m.topic,
+            event: 'phx_reply',
+            payload: { status: 'ok', response: {} },
+          }),
+        );
+    });
+  });
+}
+
+/** Deliver a broadcast to the page, as the database trigger would. */
+export function pushRealtime(page: Page, payload: Record<string, unknown>): void {
+  const ws = sockets.get(page);
+  if (!ws) throw new Error('No realtime socket yet');
+  ws.send(
+    encode({
+      join_ref: null,
+      ref: null,
+      topic: `realtime:org:${ORG}`,
+      event: 'broadcast',
+      payload: { type: 'broadcast', event: 'change', payload },
+    }),
+  );
+}
+
 /** Sign in as the owner of "Studio North" and mock every backend call. */
 export async function signedInOwner(page: Page): Promise<void> {
+  await mockRealtime(page);
   await page.route(`${BASE}/**`, handle);
   await page.addInitScript((value) => {
     localStorage.setItem('sb-e2e-placeholder-auth-token', value);

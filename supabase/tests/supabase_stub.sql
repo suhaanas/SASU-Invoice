@@ -19,6 +19,33 @@ end $$;
 create schema auth;
 create schema storage;
 create schema extensions;
+create schema realtime;
+
+-- Realtime Broadcast storage, as on Supabase (realtime.send writes here and the
+-- Realtime server delivers rows the subscriber's RLS policies allow).
+create table realtime.messages (
+  id bigserial primary key,
+  topic text not null,
+  extension text not null,
+  payload jsonb,
+  event text,
+  private boolean default false,
+  inserted_at timestamptz not null default now()
+);
+alter table realtime.messages enable row level security;
+grant usage on schema realtime to anon, authenticated, service_role;
+grant select, insert on realtime.messages to anon, authenticated;
+
+-- The topic of the channel being authorized (set by the Realtime server).
+create function realtime.topic() returns text language sql stable as $$
+  select nullif(current_setting('realtime.topic', true), '')
+$$;
+
+create function realtime.send(payload jsonb, event text, topic text, private boolean default true)
+returns void language sql security definer as $$
+  insert into realtime.messages (topic, extension, payload, event, private)
+  values (topic, 'broadcast', payload, event, private)
+$$;
 
 create table auth.users (
   id uuid primary key default gen_random_uuid(),
