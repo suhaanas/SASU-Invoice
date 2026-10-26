@@ -9,6 +9,7 @@ import {
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router';
 import productOverview from '../assets/product-overview.webp';
 import { Logo } from '../components/AppShell';
+import { useCaptcha } from '../components/Captcha';
 import { Alert, Button, Field, Input } from '../components/ui';
 import { useAuth, useAuthProviders } from '../lib/auth';
 import { MIN_PASSWORD, passwordProblem, passwordRules } from '../../core/password';
@@ -47,6 +48,8 @@ function authMessage(err: { message?: string; code?: string } | null): string {
       return 'An account with this email already exists. Try signing in.';
     case 'weak_password':
       return `Choose a stronger password: at least ${MIN_PASSWORD} characters with upper- and lowercase letters, a number and a symbol.`;
+    case 'captcha_failed':
+      return 'The security check failed or expired. Please try again.';
     case 'over_request_rate_limit':
     case 'over_email_send_rate_limit':
       return 'Too many attempts. Please wait a minute and try again.';
@@ -283,16 +286,24 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(() => oauthError(params));
   const [busy, setBusy] = useState(false);
+  const captcha = useCaptcha();
   const next = safeNext(params.get('next'));
 
   if (session) return <Navigate to={next} replace />;
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    const blocked = captcha.blocked();
+    if (blocked) return setError(blocked);
     setBusy(true);
     setError(null);
-    const { error: err } = await sb.auth.signInWithPassword({ email: email.trim(), password });
+    const { error: err } = await sb.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+      options: { captchaToken: captcha.token },
+    });
     setBusy(false);
+    captcha.reset();
     if (err) setError(authMessage(err));
     else navigate(next, { replace: true });
   }
@@ -349,6 +360,7 @@ export function LoginPage() {
             Forgot password?
           </Link>
         </div>
+        {captcha.widget}
         <Button type="submit" size="lg" className="w-full" loading={busy}>
           Sign in
         </Button>
@@ -367,6 +379,7 @@ export function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const captcha = useCaptcha();
   const next = safeNext(params.get('next'));
 
   if (session) return <Navigate to={next} replace />;
@@ -376,14 +389,21 @@ export function RegisterPage() {
     const problem = passwordProblem(password, email.trim());
     if (problem) return setError(problem);
     if (!accepted) return setError('Please accept the terms and privacy notice to continue.');
+    const blocked = captcha.blocked();
+    if (blocked) return setError(blocked);
     setBusy(true);
     setError(null);
     const { data, error: err } = await sb.auth.signUp({
       email: email.trim(),
       password,
-      options: { emailRedirectTo: appUrl(next), data: { full_name: name.trim().slice(0, 120) } },
+      options: {
+        emailRedirectTo: appUrl(next),
+        data: { full_name: name.trim().slice(0, 120) },
+        captchaToken: captcha.token,
+      },
     });
     setBusy(false);
+    captcha.reset();
     if (err) return setError(authMessage(err));
     if (!data.session) setSentTo(email.trim());
   }
@@ -488,6 +508,7 @@ export function RegisterPage() {
             . Invoices I store in the cloud are processed on my behalf.
           </span>
         </label>
+        {captcha.widget}
         <Button type="submit" size="lg" className="w-full" loading={busy}>
           Create account
         </Button>
@@ -502,17 +523,23 @@ export function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const captcha = useCaptcha();
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    const blocked = captcha.blocked();
+    if (blocked) return setError(blocked);
     setBusy(true);
     setError(null);
     const { error: err } = await sb.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: appUrl('/reset-password'),
+      captchaToken: captcha.token,
     });
     setBusy(false);
+    captcha.reset();
     // Same message whether or not the account exists, so emails can't be probed.
-    if (err && err.code?.startsWith('over_')) setError(authMessage(err));
+    if (err && (err.code?.startsWith('over_') || err.code === 'captcha_failed'))
+      setError(authMessage(err));
     else setSent(true);
   }
 
@@ -545,6 +572,7 @@ export function ForgotPasswordPage() {
               />
             )}
           </Field>
+          {captcha.widget}
           <Button type="submit" className="w-full" loading={busy}>
             Send reset link
           </Button>
