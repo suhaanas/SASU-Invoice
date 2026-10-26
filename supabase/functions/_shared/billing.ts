@@ -78,6 +78,8 @@ export class PaddleProvider implements BillingProvider {
       console.error(
         JSON.stringify({ billing: 'paddle', path, status: res.status, code: json.error?.code }),
       );
+      if (json.error?.code === 'transaction_default_checkout_url_not_set')
+        throw new BillingError('Checkout isn’t open yet. Please try again later.', 503);
       throw new BillingError(
         res.status >= 500
           ? 'The billing provider is having problems. Try again shortly.'

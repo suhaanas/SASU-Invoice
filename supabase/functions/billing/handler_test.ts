@@ -191,3 +191,21 @@ Deno.test('paddle: invoices of another customer are refused', async () => {
   }
   assertEquals(status, 404, 'refused');
 });
+
+Deno.test('paddle: a missing default payment link reads as "checkout not open yet"', async () => {
+  const paddle = new PaddleProvider('k', 'live', (() =>
+    Promise.resolve(
+      new Response(
+        JSON.stringify({ error: { code: 'transaction_default_checkout_url_not_set' } }),
+        { status: 400 },
+      ),
+    )) as typeof fetch);
+  let error: { status: number; message: string } | null = null;
+  try {
+    await paddle.createCheckout({ priceId: 'pri_1', orgId: 'org', customerId: null });
+  } catch (err) {
+    error = err as { status: number; message: string };
+  }
+  assertEquals(error?.status, 503, 'service unavailable');
+  assertEquals(error?.message, 'Checkout isn’t open yet. Please try again later.', 'clear message');
+});
