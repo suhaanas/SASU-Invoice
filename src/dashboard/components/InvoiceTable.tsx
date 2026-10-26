@@ -1,7 +1,7 @@
 import { ExternalLink, Trash2 } from 'lucide-react';
 import { Link } from 'react-router';
 import { formatMoney } from '../../core/money';
-import { formatDate } from '../../core/dates';
+import { formatDate, todayISO } from '../../core/dates';
 import { setEditorSyncOrg } from '../../cloud/prefs';
 import type { CloudInvoiceRow } from '../lib/api';
 import { Badge, Button } from './ui';
@@ -20,7 +20,7 @@ const TYPE_LABEL: Record<CloudInvoiceRow['doc_type'], string> = {
  */
 export function displayStatus(
   row: Pick<CloudInvoiceRow, 'doc_type' | 'status' | 'due_date' | 'paid_minor' | 'balance_minor'>,
-  today = new Date().toISOString().slice(0, 10),
+  today = todayISO(),
 ): string {
   if (row.doc_type !== 'invoice' || !['Unpaid', 'Overdue'].includes(row.status)) return row.status;
   if (row.due_date && row.due_date < today && row.balance_minor > 0) return 'Overdue';
@@ -49,11 +49,14 @@ export function InvoiceTable({
   rows,
   compact,
   onDelete,
+  today = todayISO(),
 }: {
   orgId: string;
   rows: CloudInvoiceRow[];
   compact?: boolean;
   onDelete?: (row: CloudInvoiceRow) => void;
+  /** The organization's calendar date (todayIn(org.timezone)), for Overdue. */
+  today?: string;
 }) {
   return (
     <div className="overflow-x-auto">
@@ -94,7 +97,7 @@ export function InvoiceTable({
         </thead>
         <tbody className="divide-y divide-rule">
           {rows.map((r) => {
-            const status = displayStatus(r);
+            const status = displayStatus(r, today);
             return (
               <tr key={r.id} className="hover:bg-hover/60">
                 <td className="px-5 py-3">

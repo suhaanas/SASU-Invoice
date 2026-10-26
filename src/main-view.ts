@@ -12,7 +12,7 @@ import './styles/sheet.css';
 import './styles/view.css';
 
 import { computeTotals } from './core/calc';
-import { formatDate } from './core/dates';
+import { formatDate, todayISO } from './core/dates';
 import { formatMoney } from './core/money';
 import { safePaymentLink } from './core/payment';
 import { DOC_TITLES, type InvoiceState } from './core/state';
@@ -107,7 +107,7 @@ function render(shared: Shared, doc: InvoiceState, token: string): void {
   const totals = computeTotals(doc);
   const { currency, locale } = doc.meta;
   const m = (minor: number) => formatMoney(minor, currency, locale);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   const status = clientStatus(shared, today);
   const title = `${DOC_TITLES[doc.docType]} ${doc.meta.number}`;
   document.title = `${title} | ${doc.business.name || 'SASU Invoice'}`;

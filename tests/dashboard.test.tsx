@@ -14,6 +14,7 @@ import {
 } from '../src/dashboard/lib/api';
 import { date, monthLabel } from '../src/dashboard/lib/format';
 import { safeNext } from '../src/dashboard/pages/Auth';
+import { toISODate } from '../src/core/dates';
 
 afterEach(cleanup);
 
@@ -182,7 +183,8 @@ describe('dates per organization timezone', () => {
     const now = new Date('2026-10-24T23:30:00Z');
     expect(todayIn('Europe/London', now)).toBe('2026-10-25');
     expect(todayIn('America/New_York', now)).toBe('2026-10-24');
-    expect(todayIn('Not/AZone', now)).toBe('2026-10-24');
+    // Unknown timezone: the browser's own calendar date, never the UTC one.
+    expect(todayIn('Not/AZone', now)).toBe(toISODate(now));
   });
 });
 
@@ -192,5 +194,21 @@ describe('dashboard date formatting', () => {
     expect(monthLabel('2026-01', true)).toBe('Jan 26');
     expect(date('2026-10-01')).toBe('1 Oct 2026');
     expect(date(null)).toBe('—');
+  });
+});
+
+describe('calendar dates never go through UTC', () => {
+  it('marks an invoice overdue on the organization’s date, not the UTC one', () => {
+    const row = {
+      doc_type: 'invoice',
+      status: 'Unpaid',
+      due_date: '2026-10-24',
+      paid_minor: 0,
+      balance_minor: 100,
+    } as const;
+    // 00:30 on 25 Oct in Colombo is still 24 Oct in UTC.
+    const now = new Date('2026-10-24T19:00:00Z');
+    expect(displayStatus(row, todayIn('Asia/Colombo', now))).toBe('Overdue');
+    expect(displayStatus(row, todayIn('UTC', now))).toBe('Unpaid');
   });
 });

@@ -9,6 +9,7 @@ import { CloudError, callFunction, cloudErrorMessage } from '../../cloud/invoice
 import type { EmailKind, Tone } from '../../core/emails';
 import type { RecurrenceUnit } from '../../core/recurrence';
 import { businessSchema } from '../../core/validate';
+import { todayISO, toISODate } from '../../core/dates';
 
 export type OrgRole = 'owner' | 'admin' | 'member';
 
@@ -289,7 +290,7 @@ export async function listInvoices(
       q = open().gt('paid_minor', 0);
       break;
     case 'overdue':
-      q = open().lt('due_date', opts.today ?? new Date().toISOString().slice(0, 10));
+      q = open().lt('due_date', opts.today ?? todayISO());
       break;
     case 'paid':
       q = q.eq('status', 'Paid');
@@ -810,7 +811,8 @@ export function todayIn(timezone: string, now = new Date()): string {
   try {
     return new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(now);
   } catch {
-    return now.toISOString().slice(0, 10);
+    // Unknown timezone: the browser's own calendar date.
+    return toISODate(now);
   }
 }
 
@@ -1067,6 +1069,8 @@ export async function monthlyUsage(
   sb: SupabaseClient,
   orgId: string,
 ): Promise<Record<string, number>> {
+  // Usage periods are UTC months in SQL, so this must be UTC too.
+  // eslint-disable-next-line no-restricted-syntax
   const period = new Date().toISOString().slice(0, 7);
   const { data, error } = await sb
     .from('usage_counters')

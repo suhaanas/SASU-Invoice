@@ -92,6 +92,8 @@ export function plausibleDate(value: string | null, today: string): string | nul
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
   const t = Date.parse(`${value}T00:00:00Z`);
   const now = Date.parse(`${today}T00:00:00Z`);
+  // Round-trip through UTC on both sides to reject impossible dates (2026-02-31).
+  // eslint-disable-next-line no-restricted-syntax
   if (Number.isNaN(t) || new Date(t).toISOString().slice(0, 10) !== value) return null;
   const days = (t - now) / 86_400_000;
   return days >= -60 && days <= 366 ? value : null;
@@ -116,6 +118,10 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   const cors = corsHeaders(req.headers.get('Origin'), deps.allowedOrigins);
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   if (req.method !== 'POST') return json(405, { error: 'Method not allowed' }, cors);
+  // The server has no user timezone; a day either way doesn't matter for the
+  // plausibility window (±60/366 days) or the prompt's "today".
+  // eslint-disable-next-line no-restricted-syntax
+  const today = () => deps.today?.() ?? new Date().toISOString().slice(0, 10);
 
   const token = /^Bearer (.+)$/.exec(req.headers.get('Authorization') ?? '')?.[1];
   const userId = token ? await deps.userFromToken(token) : null;
@@ -219,7 +225,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     case 'analyze_reply':
       request = {
         system: `You help a small business understand a client's reply about an unpaid invoice.
-Summarise it in one or two sentences, classify the intent, say whether the client disputes the invoice (wrong amount, work not delivered, not agreed…) and why, and extract a payment date only if the client explicitly states one (YYYY-MM-DD; today is ${deps.today?.() ?? new Date().toISOString().slice(0, 10)}).
+Summarise it in one or two sentences, classify the intent, say whether the client disputes the invoice (wrong amount, work not delivered, not agreed…) and why, and extract a payment date only if the client explicitly states one (YYYY-MM-DD; today is ${today()}).
 Suggest up to 4 short next steps for the business. You cannot verify payments: if the client says they paid, the next step is to check the bank account before recording anything.
 Also draft a polite reply using {{client_name}} and {{signature}} placeholders. Never threaten or mention legal action, collections or credit scores.
 Identifiers in the text may be masked like [email]; leave them masked.`,
@@ -290,10 +296,7 @@ Identifiers in the text may be masked like [email]; leave them masked.`,
       return {
         data: {
           ...a.data,
-          proposed_payment_date: plausibleDate(
-            a.data.proposed_payment_date,
-            deps.today?.() ?? new Date().toISOString().slice(0, 10),
-          ),
+          proposed_payment_date: plausibleDate(a.data.proposed_payment_date, today()),
           suggested_reply: 'reason' in reply ? '' : reply.body.replace(/\n\n\{\{link\}\}/, ''),
           // The assistant can't confirm money arrived; the UI must say so.
           requires_verification: a.data.intent === 'paid_already',

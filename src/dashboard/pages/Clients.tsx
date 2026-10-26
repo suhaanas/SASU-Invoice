@@ -47,6 +47,7 @@ import {
   type ClientBalance,
   type ClientInput,
   type ClientRow,
+  todayIn,
 } from '../lib/api';
 import { useSupabase } from '../lib/auth';
 import { date, money } from '../lib/format';
@@ -809,7 +810,7 @@ function ClientInvoices({ clientId }: { clientId: string }) {
         />
       ) : (
         <>
-          <InvoiceTable orgId={org.id} rows={list.data.rows} />
+          <InvoiceTable orgId={org.id} rows={list.data.rows} today={todayIn(org.timezone)} />
           {list.data.total > INVOICE_PAGE_SIZE && (
             <div className="flex justify-end gap-2 border-t border-rule px-5 py-3">
               <Button

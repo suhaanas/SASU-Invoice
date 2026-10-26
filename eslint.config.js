@@ -3,8 +3,34 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+// Invoice dates are calendar dates: parse and build them in local time
+// (src/core/dates.ts). UTC conversions shift them a day across time zones.
+const calendarDateRules = [
+  {
+    selector:
+      "CallExpression[callee.property.name=/^(slice|substring|substr|split)$/][callee.object.callee.property.name='toISOString']",
+    message:
+      'toISOString() is UTC and shifts calendar dates across time zones. Use todayISO()/toISODate() from src/core/dates.ts (or todayIn(org.timezone)).',
+  },
+  {
+    selector: "NewExpression[callee.name='Date'] > Literal[value=/^\\d{4}-\\d{2}-\\d{2}$/]",
+    message:
+      "new Date('YYYY-MM-DD') is read as UTC midnight. Use parseISODate() from src/core/dates.ts.",
+  },
+];
+
 export default tseslint.config(
-  { ignores: ['dist', 'dist-e2e', 'test-results', 'playwright-report', 'node_modules', '.kilo', 'supabase/functions/_shared/core'] },
+  {
+    ignores: [
+      'dist',
+      'dist-e2e',
+      'test-results',
+      'playwright-report',
+      'node_modules',
+      '.kilo',
+      'supabase/functions/_shared/core',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -32,6 +58,7 @@ export default tseslint.config(
           selector: "CallExpression[callee.property.name='write'][callee.object.name='document']",
           message: 'document.write is banned.',
         },
+        ...calendarDateRules,
       ],
       'no-eval': 'error',
       'no-implied-eval': 'error',
@@ -52,6 +79,7 @@ export default tseslint.config(
           selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
           message: 'Render text, never HTML.',
         },
+        ...calendarDateRules,
       ],
     },
   },

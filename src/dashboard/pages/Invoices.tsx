@@ -204,7 +204,12 @@ export function InvoicesPage() {
           </EmptyState>
         ) : (
           <>
-            <InvoiceTable orgId={org.id} rows={list.data.rows} onDelete={setDeleting} />
+            <InvoiceTable
+              orgId={org.id}
+              rows={list.data.rows}
+              onDelete={setDeleting}
+              today={todayIn(org.timezone)}
+            />
             <div className="flex items-center justify-between border-t border-rule px-5 py-3 text-sm text-graphite">
               <span>
                 {page * INVOICE_PAGE_SIZE + 1}–{Math.min(total, (page + 1) * INVOICE_PAGE_SIZE)} of{' '}

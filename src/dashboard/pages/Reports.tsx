@@ -9,7 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Download, Printer } from 'lucide-react';
 import { useState } from 'react';
 import { toCsv } from '../../core/csv';
-import { addMonths, todayISO } from '../../core/dates';
+import { addDays, addMonths, todayISO } from '../../core/dates';
 import { currencyDigits, fromMinor } from '../../core/money';
 import { downloadBlob } from '../../ui/dom';
 import { MonthlyChart } from '../components/Charts';
@@ -45,12 +45,7 @@ export function rangeFor(preset: Preset, today: string): { from: string; to: str
   const y = Number(today.slice(0, 4));
   const m = Number(today.slice(5, 7));
   const monthStart = `${today.slice(0, 7)}-01`;
-  const endOfMonth = (start: string) => {
-    const next = addMonths(start, 1);
-    const d = new Date(`${next}T00:00:00Z`);
-    d.setUTCDate(0);
-    return d.toISOString().slice(0, 10);
-  };
+  const endOfMonth = (start: string) => addDays(addMonths(start, 1), -1);
   switch (preset) {
     case 'last_month': {
       const start = addMonths(monthStart, -1);

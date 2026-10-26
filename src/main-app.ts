@@ -10,7 +10,7 @@ import './styles/sheet.css';
 import './styles/app.css';
 
 import { computeTotals } from './core/calc';
-import { DUE_TERMS, dueDateFor, formatDate } from './core/dates';
+import { DUE_TERMS, dueDateFor, formatDate, todayISO } from './core/dates';
 import { CURRENCIES, LOCALES, formatMoney } from './core/money';
 import {
   ACCENTS,
@@ -834,7 +834,7 @@ byId('csvBtn').addEventListener('click', () => {
   }
   // BOM so Excel opens accented text as UTF-8.
   const blob = new Blob(['\ufeff', documentsToCsv(invoices)], { type: 'text/csv;charset=utf-8' });
-  downloadBlob(blob, safeFileName(`sasu-invoices-${new Date().toISOString().slice(0, 10)}`, 'csv'));
+  downloadBlob(blob, safeFileName(`sasu-invoices-${todayISO()}`, 'csv'));
   showToast('CSV downloaded');
 });
 

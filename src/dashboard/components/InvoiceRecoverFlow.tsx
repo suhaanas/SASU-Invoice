@@ -19,6 +19,7 @@ import {
   setRemindersPaused,
   type InvoiceDetail,
   type ReplyAnalysis,
+  todayIn,
 } from '../lib/api';
 import { useSupabase } from '../lib/auth';
 import { date, dateTime } from '../lib/format';
@@ -93,7 +94,7 @@ export function InvoiceRecoverFlow({ invoice }: { invoice: InvoiceDetail }) {
 
   const open = (kind: EmailKind, extra: Partial<ComposerPreset> = {}) =>
     setComposer({ kind, to: clientEmail, ...extra });
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayIn(org.timezone);
   const pastDue = !!invoice.due_date && invoice.due_date < today;
   const defaultKind: EmailKind =
     invoice.balance_minor <= 0 ? 'payment_received' : pastDue ? 'overdue' : 'new_invoice';

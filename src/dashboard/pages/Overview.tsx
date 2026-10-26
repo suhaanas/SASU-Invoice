@@ -12,6 +12,7 @@ import {
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { getEditorSyncOrg, getImportMarker } from '../../cloud/prefs';
+import { addDays } from '../../core/dates';
 import { currencyDigits } from '../../core/money';
 import { loadInvoices } from '../../core/storage';
 import { AgingChart, MonthlyChart } from '../components/Charts';
@@ -456,9 +457,7 @@ export function OverviewPage() {
 
   const s = summary.data;
   const m = (minor: number) => money(minor, currency);
-  const inWeek = new Date(Date.parse(`${today}T00:00:00Z`) + 7 * 86_400_000)
-    .toISOString()
-    .slice(0, 10);
+  const inWeek = addDays(today, 7);
   const hasIssued = list.length > 0;
 
   return (
