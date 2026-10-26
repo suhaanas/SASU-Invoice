@@ -2,7 +2,7 @@
  * POST /functions/v1/billing-webhook — Paddle notifications (signed with the
  * endpoint's secret). The only path by which a subscription changes.
  */
-import { parsePaddleEvent, verifyPaddle } from '../_shared/billing.ts';
+import { parsePaddleEvent, verifyOrgTag, verifyPaddle } from '../_shared/billing.ts';
 import { json } from '../_shared/http.ts';
 import type { Rpc } from '../_shared/supabase.ts';
 
@@ -33,6 +33,12 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     return json(400, { error: 'Invalid JSON' });
   }
   if (!parsed) return json(400, { error: 'Unrecognised event' });
+  // custom_data can be set from a browser checkout, so an organization is only
+  // trusted when it carries the signature our billing function adds.
+  const tagged = parsed.kind === 'subscription' ? parsed.event : parsed;
+  const trustedOrg = (await verifyOrgTag(deps.secret, tagged.orgId, tagged.orgSig))
+    ? tagged.orgId
+    : null;
 
   const result =
     parsed.kind === 'subscription'
@@ -41,7 +47,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
           p_event_id: parsed.event.eventId,
           p_event_type: parsed.event.eventType,
           p_occurred_at: parsed.event.occurredAt,
-          p_org: parsed.event.orgId,
+          p_org: trustedOrg,
           p_subscription_id: parsed.event.subscriptionId,
           p_customer_id: parsed.event.customerId,
           p_price_id: parsed.event.priceId,
@@ -54,7 +60,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
           p_event_id: parsed.eventId,
           p_event_type: parsed.eventType,
           p_occurred_at: parsed.occurredAt,
-          p_org: parsed.orgId,
+          p_org: trustedOrg,
           p_detail: null,
         });
   // 5xx makes Paddle retry; recorded errors (unknown price…) are acknowledged and visible in the log.

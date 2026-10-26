@@ -1,4 +1,4 @@
-import { paddleSignature, verifyPaddle } from '../_shared/billing.ts';
+import { orgTag, paddleSignature, PaddleProvider, verifyPaddle } from '../_shared/billing.ts';
 import { handle } from './handler.ts';
 
 function assertEquals(actual: unknown, expected: unknown, label: string) {
@@ -22,6 +22,8 @@ async function signed(body: string, ts = NOW): Promise<Request> {
   });
 }
 
+const ORG_SIG = await orgTag(SECRET, ORG);
+
 const subscriptionEvent = JSON.stringify({
   event_id: 'evt_01',
   event_type: 'subscription.updated',
@@ -30,7 +32,7 @@ const subscriptionEvent = JSON.stringify({
     id: 'sub_01',
     status: 'active',
     customer_id: 'ctm_01',
-    custom_data: { org_id: ORG },
+    custom_data: { org_id: ORG, org_sig: ORG_SIG },
     items: [{ price: { id: 'pri_pro' } }],
     current_billing_period: { ends_at: '2026-11-24T10:00:00Z' },
     scheduled_change: { action: 'cancel' },
@@ -116,4 +118,59 @@ Deno.test('unsigned requests never reach the database', async () => {
     },
   );
   assertEquals([res.status, called], [401, false], 'rejected');
+});
+
+Deno.test(
+  'an organization id without our signature is not trusted (browser-forged checkout)',
+  async () => {
+    const calls: Record<string, unknown>[] = [];
+    const forged = (sig?: string) =>
+      JSON.stringify({
+        ...JSON.parse(subscriptionEvent),
+        event_id: `evt_forged_${sig ?? 'none'}`,
+        data: {
+          ...JSON.parse(subscriptionEvent).data,
+          custom_data: { org_id: ORG, ...(sig ? { org_sig: sig } : {}) },
+        },
+      });
+    for (const body of [
+      forged(),
+      forged('0'.repeat(64)),
+      forged(await orgTag('other-secret', ORG)),
+    ]) {
+      const res = await handle(await signed(body), {
+        secret: SECRET,
+        nowSeconds: () => NOW,
+        rpc: (name, args) => {
+          if (name === 'billing_apply_subscription_event') calls.push(args);
+          return Promise.resolve({ data: 'error', error: null });
+        },
+      });
+      assertEquals(res.status, 200, 'acknowledged');
+    }
+    assertEquals(
+      calls.map((a) => a.p_org),
+      [null, null, null],
+      'org dropped unless signed by us',
+    );
+  },
+);
+
+Deno.test('checkouts carry the signed organization tag', async () => {
+  let sent: Record<string, unknown> = {};
+  const paddle = new PaddleProvider(
+    'k',
+    'live',
+    ((_url: string, init: RequestInit) => {
+      sent = JSON.parse(String(init.body));
+      return Promise.resolve(
+        new Response(JSON.stringify({ data: { checkout: { url: 'https://pay.test' } } }), {
+          status: 200,
+        }),
+      );
+    }) as typeof fetch,
+    SECRET,
+  );
+  await paddle.createCheckout({ priceId: 'pri_pro', orgId: ORG, customerId: null });
+  assertEquals(sent.custom_data, { org_id: ORG, org_sig: ORG_SIG }, 'signed tag');
 });

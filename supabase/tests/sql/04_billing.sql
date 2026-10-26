@@ -138,3 +138,31 @@ select tests.login(:'carol');
 set role authenticated;
 select tests.check((select count(*) from public.subscription_events) = 0, 'members (non-owners) cannot see billing events');
 reset role;
+
+-- Takeover attempts: another subscription or customer can't attach to an org that has one.
+update public.subscriptions set status = 'active', current_period_end = now() + interval '20 days',
+  provider_subscription_id = 'sub_b', provider_customer_id = 'ctm_b' where org_id = :'org_b';
+set role service_role;
+select tests.check(
+  public.billing_apply_subscription_event('paddle', 'evt_g1', 'subscription.created', '2026-10-29 10:00Z', :'org_b',
+    'sub_attacker', 'ctm_attacker', 'pri_pro', 'active', '2026-11-29 10:00Z', false) = 'error',
+  'a second subscription cannot take over an organization with an active one');
+select tests.check(
+  (select detail from public.subscription_events where provider_event_id = 'evt_g1')
+    = 'organization already has another active subscription',
+  'the takeover attempt is logged');
+reset role;
+update public.subscriptions set status = 'canceled', current_period_end = now() - interval '1 day' where org_id = :'org_b';
+set role service_role;
+select tests.check(
+  public.billing_apply_subscription_event('paddle', 'evt_g2', 'subscription.created', '2026-10-30 10:00Z', :'org_b',
+    'sub_new', 'ctm_attacker', 'pri_pro', 'active', '2026-11-30 10:00Z', false) = 'error',
+  'a subscription from a different Paddle customer is refused');
+select tests.check(
+  public.billing_apply_subscription_event('paddle', 'evt_g3', 'subscription.created', '2026-10-30 11:00Z', :'org_b',
+    'sub_new', 'ctm_b', 'pri_pro', 'active', '2026-11-30 10:00Z', false) = 'applied',
+  'the same customer can subscribe again after cancelling');
+reset role;
+select tests.check(
+  (select provider_subscription_id = 'sub_new' and plan_code = 'pro' from public.subscriptions where org_id = :'org_b'),
+  'the new subscription is attached');

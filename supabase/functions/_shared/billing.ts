@@ -53,6 +53,8 @@ export class PaddleProvider implements BillingProvider {
     private readonly apiKey: string,
     environment: 'sandbox' | 'live',
     private readonly fetchFn: typeof fetch = fetch,
+    /** Server-only secret that signs the organization tag on checkouts. */
+    private readonly tagSecret = '',
   ) {
     this.base =
       environment === 'live' ? 'https://api.paddle.com' : 'https://sandbox-api.paddle.com';
@@ -93,7 +95,12 @@ export class PaddleProvider implements BillingProvider {
   async createCheckout(input: { priceId: string; orgId: string; customerId: string | null }) {
     const data = await this.call('POST', '/transactions', {
       items: [{ price_id: input.priceId, quantity: 1 }],
-      custom_data: { org_id: input.orgId },
+      // Paddle.js can set custom_data from the browser too, so the webhook only
+      // trusts an org_id that carries our signature.
+      custom_data: {
+        org_id: input.orgId,
+        ...(this.tagSecret ? { org_sig: await orgTag(this.tagSecret, input.orgId) } : {}),
+      },
       ...(input.customerId ? { customer_id: input.customerId } : {}),
       collection_mode: 'automatic',
     });
@@ -205,7 +212,9 @@ export class NotConfiguredBilling implements BillingProvider {
 export function billingFromEnv(fetchFn?: typeof fetch): BillingProvider {
   const key = Deno.env.get('PADDLE_API_KEY');
   const env = Deno.env.get('PADDLE_ENVIRONMENT') === 'live' ? 'live' : 'sandbox';
-  return key ? new PaddleProvider(key, env, fetchFn) : new NotConfiguredBilling();
+  return key
+    ? new PaddleProvider(key, env, fetchFn, Deno.env.get('PADDLE_WEBHOOK_SECRET') ?? '')
+    : new NotConfiguredBilling();
 }
 
 // --- Webhook signatures ------------------------------------------------------------------
@@ -226,6 +235,20 @@ export async function paddleSignature(
   );
   const mac = await crypto.subtle.sign('HMAC', key, encoder.encode(`${timestamp}:${body}`));
   return [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** HMAC tag binding a checkout to an organization (see createCheckout). */
+export function orgTag(secret: string, orgId: string): Promise<string> {
+  return paddleSignature(secret, 'org', orgId.toLowerCase());
+}
+
+export async function verifyOrgTag(
+  secret: string,
+  orgId: string | null,
+  tag: string | null,
+): Promise<boolean> {
+  if (!secret || !orgId || !tag) return false;
+  return safeEqual(tag, await orgTag(secret, orgId));
 }
 
 /** `Paddle-Signature: ts=1671552777;h1=<hex>[;h1=<hex>]`, valid for 5 minutes. */
@@ -251,6 +274,8 @@ export interface SubscriptionEvent {
   eventType: string;
   occurredAt: string;
   orgId: string | null;
+  /** Our HMAC of orgId; an orgId without a valid one is not trusted. */
+  orgSig: string | null;
   subscriptionId: string;
   customerId: string | null;
   priceId: string | null;
@@ -269,6 +294,7 @@ export function parsePaddleEvent(raw: unknown):
       eventType: string;
       occurredAt: string;
       orgId: string | null;
+      orgSig: string | null;
     }
   | null {
   const e = raw as {
@@ -279,7 +305,7 @@ export function parsePaddleEvent(raw: unknown):
       id?: string;
       status?: string;
       customer_id?: string;
-      custom_data?: { org_id?: string } | null;
+      custom_data?: { org_id?: string; org_sig?: string } | null;
       items?: { price?: { id?: string } }[];
       current_billing_period?: { ends_at?: string } | null;
       scheduled_change?: { action?: string } | null;
@@ -289,6 +315,8 @@ export function parsePaddleEvent(raw: unknown):
     return null;
   const orgRaw = e.data?.custom_data?.org_id;
   const orgId = typeof orgRaw === 'string' && UUID.test(orgRaw) ? orgRaw : null;
+  const sigRaw = e.data?.custom_data?.org_sig;
+  const orgSig = typeof sigRaw === 'string' && /^[0-9a-f]{64}$/.test(sigRaw) ? sigRaw : null;
   if (!e.event_type.startsWith('subscription.') || !e.data?.id) {
     return {
       kind: 'other',
@@ -296,6 +324,7 @@ export function parsePaddleEvent(raw: unknown):
       eventType: e.event_type,
       occurredAt: e.occurred_at,
       orgId,
+      orgSig,
     };
   }
   return {
@@ -305,6 +334,7 @@ export function parsePaddleEvent(raw: unknown):
       eventType: e.event_type,
       occurredAt: e.occurred_at,
       orgId,
+      orgSig,
       subscriptionId: e.data.id,
       customerId: e.data.customer_id ?? null,
       priceId: e.data.items?.[0]?.price?.id ?? null,
