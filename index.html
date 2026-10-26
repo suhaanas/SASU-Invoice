@@ -131,7 +131,7 @@
         "Live invoice preview",
         "Vector multi-page PDF and PNG export",
         "Quotes, credit notes, receipts and proformas",
-        "13 currencies and 8 number formats",
+        "Every ISO 4217 currency (155), including LKR, and 8 number formats",
         "Tax IDs and legal footers",
         "Cloud workspace with clients and payment tracking",
         "Automatic email payment reminders",
@@ -197,7 +197,7 @@
           "name": "Which currencies can I use?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "13 currencies, including US dollars, euros, pounds, rupees, yen and Sri Lankan rupees, each formatted the way that country expects."
+            "text": "155 currencies (every circulating ISO 4217 currency), including US dollars, euros, pounds, Indian and Sri Lankan rupees and yen, each with the right number of decimals."
           }
         },
         {
@@ -280,7 +280,7 @@
                     <p class="hero-upsell" data-signed-out>14-day Pro trial · no card needed · cancel any time</p>
                     <dl class="facts">
                         <div><dt>Auto</dt><dd>payment reminders</dd></div>
-                        <div><dt><span data-fact="currencies">13</span></dt><dd>currencies</dd></div>
+                        <div><dt><span data-fact="currencies">155</span></dt><dd>currencies</dd></div>
                         <div><dt>PDF</dt><dd>vector, multi-page</dd></div>
                         <div><dt>$0</dt><dd>to start</dd></div>
                     </dl>
@@ -303,6 +303,7 @@
                             <button type="button" data-currency="USD" aria-pressed="false">$ USD</button>
                             <button type="button" data-currency="EUR" aria-pressed="false">€ EUR</button>
                             <button type="button" data-currency="INR" aria-pressed="false">₹ INR</button>
+                            <button type="button" data-currency="LKR" aria-pressed="false">Rs LKR</button>
                             <button type="button" data-currency="JPY" aria-pressed="false">¥ JPY</button>
                         </div>
                         <button type="button" class="replay" id="heroReplay" hidden>Play again</button>
@@ -492,8 +493,7 @@
                     </details>
                     <details>
                         <summary>Which currencies can I use?</summary>
-                        <p><span data-fact="currencies">13</span> currencies, including US dollars, euros, pounds,
-                            rupees, yen and Sri Lankan rupees, each formatted the way that country expects.</p>
+                        <p><span data-fact="currencies">155</span> currencies (every circulating ISO 4217 currency), including US dollars, euros, pounds, Indian and Sri Lankan rupees and yen, each with the right number of decimals.</p>
                     </details>
                     <details>
                         <summary>Can I make quotes and credit notes?</summary>

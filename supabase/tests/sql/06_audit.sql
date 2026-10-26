@@ -99,3 +99,14 @@ select tests.check((public.admin_overview() -> 'scheduler' -> 'scheduler' ->> 's
   'admins see when the scheduler last ran');
 select tests.throws('select public.rf_rate_limit(''x'', 1, 60)', '42501', 'users cannot touch the rate limiter');
 reset role;
+
+-- Currency minor units match src/core/money.ts (ISO 4217).
+do $$
+begin
+  assert app.currency_digits('USD') = 2, 'USD has 2 decimals';
+  assert app.currency_digits('LKR') = 2, 'LKR has 2 decimals';
+  assert app.currency_digits('JPY') = 0, 'JPY has no decimals';
+  assert app.currency_digits('KRW') = 0, 'KRW has no decimals';
+  assert app.currency_digits('KWD') = 3, 'KWD has 3 decimals';
+  raise notice 'ok - currency minor units follow ISO 4217';
+end $$;

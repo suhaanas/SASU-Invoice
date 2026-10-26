@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { currencyDigits, formatMoney, parseAmount, roundHalfUp, toMinor } from '../src/core/money';
+import {
+  CURRENCIES,
+  CURRENCY_CODES,
+  currencyDigits,
+  formatMoney,
+  isCurrencyCode,
+  parseAmount,
+  roundHalfUp,
+  toMinor,
+} from '../src/core/money';
 
 describe('money', () => {
   it('knows currency minor-unit digits', () => {
@@ -47,5 +56,28 @@ describe('parseAmount', () => {
     expect(parseAmount('12.5', 'JPY')).toBeNull();
     expect(parseAmount('1e5', 'USD')).toBeNull();
     expect(parseAmount('12abc', 'USD')).toBeNull();
+  });
+});
+
+describe('every currency', () => {
+  it('offers all circulating ISO 4217 currencies, popular ones (incl. LKR) first', () => {
+    expect(CURRENCY_CODES.length).toBe(155);
+    expect(CURRENCIES.map((c) => c.code).slice(0, 5)).toEqual(['USD', 'EUR', 'GBP', 'INR', 'LKR']);
+    expect(new Set(CURRENCIES.map((c) => c.code)).size).toBe(CURRENCY_CODES.length);
+    expect(isCurrencyCode('LKR')).toBe(true);
+    expect(isCurrencyCode('XOF')).toBe(true);
+    expect(isCurrencyCode('ABC')).toBe(false);
+  });
+
+  it('uses ISO 4217 decimals, not the runtime’s (which differ between browsers)', () => {
+    expect(currencyDigits('LKR')).toBe(2);
+    expect(currencyDigits('HUF')).toBe(2);
+    expect(currencyDigits('IDR')).toBe(2);
+    expect(currencyDigits('KRW')).toBe(0);
+    expect(currencyDigits('KWD')).toBe(3);
+    expect(toMinor(12.345, 'KWD')).toBe(12345);
+    expect(formatMoney(150000, 'LKR', 'en-GB')).toMatch(/^LKR\s1,500\.00$/u);
+    expect(formatMoney(123456, 'HUF', 'en-GB')).toMatch(/1,234\.56/);
+    expect(formatMoney(1234, 'KWD', 'en-GB')).toMatch(/1\.234/);
   });
 });

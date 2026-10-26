@@ -11,11 +11,15 @@ import { HERO_CLIENT, HERO_LINES, heroInvoice, heroInvoiceComplete } from './dem
 import { countUp, reducedMotion, sleep, whenVisible } from './motion';
 
 /** Illustrative conversions from the GBP demo prices, rounded to tidy numbers. */
-const CURRENCY_VIEWS: Record<string, { currency: CurrencyCode; locale: LocaleCode; rate: number; step: number }> = {
+const CURRENCY_VIEWS: Record<
+  string,
+  { currency: CurrencyCode; locale: LocaleCode; rate: number; step: number }
+> = {
   GBP: { currency: 'GBP', locale: 'en-GB', rate: 1, step: 1 },
   USD: { currency: 'USD', locale: 'en-US', rate: 1.3, step: 5 },
   EUR: { currency: 'EUR', locale: 'fr-FR', rate: 1.15, step: 5 },
   INR: { currency: 'INR', locale: 'en-IN', rate: 110, step: 100 },
+  LKR: { currency: 'LKR', locale: 'en-GB', rate: 390, step: 500 },
   JPY: { currency: 'JPY', locale: 'ja-JP', rate: 195, step: 1000 },
 };
 
@@ -27,7 +31,10 @@ function view(base: InvoiceState): InvoiceState {
   return {
     ...base,
     meta: { ...base.meta, currency: v.currency, locale: v.locale },
-    items: base.items.map((it) => ({ ...it, rate: roundHalfUp((it.rate * v.rate) / v.step) * v.step })),
+    items: base.items.map((it) => ({
+      ...it,
+      rate: roundHalfUp((it.rate * v.rate) / v.step) * v.step,
+    })),
   };
 }
 
@@ -61,7 +68,12 @@ export function initHero(): void {
   /** Overwrite the visible grand total while it counts up. */
   const grandCell = () => holder.querySelector<HTMLElement>('.itm-grand span:last-child');
 
-  const typeInto = async (label: string, text: string, perChar: number, onChar: (s: string) => void) => {
+  const typeInto = async (
+    label: string,
+    text: string,
+    perChar: number,
+    onChar: (s: string) => void,
+  ) => {
     fieldLabel.textContent = label;
     field.textContent = '';
     for (let i = 1; i <= text.length; i++) {
@@ -142,9 +154,9 @@ export function initHero(): void {
   document.querySelectorAll<HTMLButtonElement>('[data-currency]').forEach((btn) => {
     btn.addEventListener('click', () => {
       currencyKey = btn.dataset.currency ?? 'GBP';
-      document.querySelectorAll<HTMLButtonElement>('[data-currency]').forEach((b) =>
-        b.setAttribute('aria-pressed', String(b === btn)),
-      );
+      document
+        .querySelectorAll<HTMLButtonElement>('[data-currency]')
+        .forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
       render();
     });
   });
