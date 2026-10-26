@@ -4,8 +4,8 @@
  * Unknown keys are stripped; out-of-range values are rejected.
  */
 import { z } from 'zod';
-import { CURRENCY_CODES, LOCALE_CODES } from './money';
-import { DUE_TERM_IDS } from './dates';
+import { CURRENCY_CODES, LOCALE_CODES } from './money.ts';
+import { DUE_TERM_IDS } from './dates.ts';
 import {
   DISCOUNT_TYPES,
   DOC_TYPES,
@@ -15,7 +15,7 @@ import {
   STATUSES,
   VAT_CATEGORY_CODES,
   type InvoiceState,
-} from './state';
+} from './state.ts';
 
 // Our CSP forbids eval; skip zod's JIT (and its `new Function` probe, which
 // would otherwise log a CSP violation on every page load).

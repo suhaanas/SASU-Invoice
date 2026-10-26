@@ -9,8 +9,8 @@ import {
   profileSchema,
   type CatalogItem,
   type Profile,
-} from './validate';
-import type { Client, InvoiceState } from './state';
+} from './validate.ts';
+import type { Client, InvoiceState } from './state.ts';
 
 const KEYS = {
   invoices: 'sasu:v3:invoices',
@@ -19,6 +19,7 @@ const KEYS = {
   catalog: 'sasu:v3:catalog',
   quarantine: 'sasu:v3:quarantine',
   lastBackup: 'sasu:v3:lastBackupAt',
+  invoicePrefix: 'sasu:v3:invoicePrefix',
 } as const;
 
 function read(key: string): unknown {
@@ -87,6 +88,16 @@ export function loadLastBackup(): number | null {
 
 export function saveLastBackup(at: number): void {
   write(KEYS.lastBackup, at);
+}
+
+/** Custom invoice-number prefix chosen during cloud onboarding ('' = default). */
+export function loadInvoicePrefix(): string {
+  const v = read(KEYS.invoicePrefix);
+  return typeof v === 'string' && /^[\w\-/.#]{1,20}$/.test(v) ? v : '';
+}
+
+export function saveInvoicePrefix(prefix: string): void {
+  write(KEYS.invoicePrefix, prefix);
 }
 
 export function saveInvoices(list: InvoiceState[]): boolean {

@@ -1,0 +1,66 @@
+/**
+ * Service-role Supabase client and session lookup for Edge Functions. The
+ * service role bypasses RLS, so it only ever calls the service-only rf_ / save
+ * RPCs, which re-check the caller's membership themselves.
+ */
+import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.117.3';
+import type { SqlError } from './http.ts';
+
+export function requireEnv(name: string): string {
+  const v = Deno.env.get(name);
+  if (!v) throw new Error(`${name} must be set`);
+  return v;
+}
+
+let admin: SupabaseClient | null = null;
+
+export function adminClient(): SupabaseClient {
+  admin ??= createClient(requireEnv('SUPABASE_URL'), requireEnv('SUPABASE_SERVICE_ROLE_KEY'), {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  return admin;
+}
+
+export async function userFromToken(token: string): Promise<string | null> {
+  const { data, error } = await adminClient().auth.getUser(token);
+  return error || !data.user ? null : data.user.id;
+}
+
+export type Rpc = (
+  name: string,
+  args: Record<string, unknown>,
+) => Promise<{ data: unknown; error: SqlError | null }>;
+
+/** RPC call that logs unexpected (non-SA) database errors with the function name. */
+export function rpcLogger(fn: string): Rpc {
+  return async (name, args) => {
+    const { data, error } = await adminClient().rpc(name, args);
+    if (error && !error.code?.startsWith('SA')) {
+      console.error(JSON.stringify({ fn, rpc: name, error }));
+    }
+    return { data, error };
+  };
+}
+
+/**
+ * Per-user/action rate limit (fixed window, counted in the database). Fails
+ * open if the counter can't be reached: authentication and every business
+ * rule still apply, so an outage of the limiter doesn't become an outage.
+ */
+export async function overLimit(
+  rpc: Rpc,
+  key: string,
+  limit: number,
+  windowSeconds = 60,
+): Promise<boolean> {
+  const { data, error } = await rpc('rf_rate_limit', {
+    p_key: key,
+    p_limit: limit,
+    p_window_seconds: windowSeconds,
+  });
+  if (error) {
+    console.error(JSON.stringify({ rateLimit: key, error: error.message }));
+    return false;
+  }
+  return data === false;
+}

@@ -3,7 +3,7 @@
  * Invoices must be numbered sequentially and uniquely, so the next number is
  * derived from the highest existing number in the same series.
  */
-import { nextInvoiceNumber, type DocType, type InvoiceState } from './state';
+import { nextInvoiceNumber, type DocType, type InvoiceState } from './state.ts';
 
 export const SERIES_PREFIX: Record<DocType, string> = {
   invoice: 'INV-',
@@ -19,10 +19,20 @@ function seq(number: string): number {
   return m ? Number(m[1]) : -1;
 }
 
-/** Next number in a document type's series, e.g. "INV-007" after "INV-006". */
-export function nextNumber(type: DocType, docs: InvoiceState[], excludeId?: string): string {
+/** Series prefixes, with any user-chosen ones (e.g. "ACME-" for invoices) applied. */
+export type Prefixes = Partial<Record<DocType, string>>;
+
+export const seriesPrefix = (type: DocType, prefixes: Prefixes = {}): string =>
+  prefixes[type] || SERIES_PREFIX[type];
+
+/**
+ * Next number in a document type's series, e.g. "INV-007" after "INV-006".
+ * A custom prefix only applies when the series starts; after that the
+ * existing numbers carry on.
+ */
+export function nextNumber(type: DocType, docs: InvoiceState[], excludeId?: string, prefixes: Prefixes = {}): string {
   const same = docs.filter((d) => d.docType === type && d.id !== excludeId && d.meta.number.trim());
-  if (same.length === 0) return `${SERIES_PREFIX[type]}001`;
+  if (same.length === 0) return `${seriesPrefix(type, prefixes)}001`;
   const highest = same.reduce((best, d) => (seq(d.meta.number) > seq(best.meta.number) ? d : best));
   return nextInvoiceNumber(highest.meta.number);
 }

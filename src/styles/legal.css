@@ -1,0 +1,73 @@
+/* Terms, privacy and refund pages (terms.html, privacy.html, refunds.html). */
+
+.legal {
+    max-width: 760px;
+}
+
+.legal-doc {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    padding: 28px 24px 32px;
+    line-height: 1.65;
+}
+
+.legal-doc h1 {
+    margin: 0 0 4px;
+    font-family: var(--font-display);
+    font-size: 30px;
+    line-height: 1.2;
+}
+
+.legal-doc .legal-updated {
+    margin: 0 0 24px;
+    color: var(--faint);
+    font-size: 13px;
+}
+
+.legal-doc h2 {
+    margin: 28px 0 8px;
+    font-family: var(--font-display);
+    font-size: 18px;
+}
+
+.legal-doc p,
+.legal-doc li {
+    color: var(--graphite);
+}
+
+.legal-doc strong {
+    color: var(--ink);
+}
+
+.legal-doc ul {
+    padding-left: 20px;
+}
+
+.legal-doc a,
+.legal-nav a {
+    color: var(--brand-ink);
+}
+
+.legal-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin-top: 24px;
+    font-size: 13px;
+}
+
+.legal-nav a {
+    text-decoration: none;
+}
+
+.legal-nav a:hover,
+.legal-nav a[aria-current='page'] {
+    text-decoration: underline;
+}
+
+@media (min-width: 640px) {
+    .legal-doc {
+        padding: 40px 48px 44px;
+    }
+}

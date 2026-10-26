@@ -1274,3 +1274,50 @@ input[type='range'] {
         scroll-behavior: auto !important;
     }
 }
+
+/* ---------- Nav actions ---------- */
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.nav-signin {
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.nav-signin:hover {
+    color: var(--accent-ink);
+}
+
+@media (max-width: 640px) {
+    .nav-signin {
+        display: none;
+    }
+}
+
+.hero-upsell {
+    margin: 14px 0 0;
+    color: var(--graphite);
+    font-size: 14px;
+}
+
+.hero-upsell a {
+    color: var(--accent-ink);
+    font-weight: 600;
+}
+
+.closing-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.privacy a {
+    color: var(--accent-ink);
+    font-weight: 600;
+}

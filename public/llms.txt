@@ -1,0 +1,25 @@
+# SASU Invoice
+
+> SASU Invoice is invoicing software for freelancers and small businesses. A cloud workspace lets you create and send invoices by email or secure link, track clients and payments, run recurring invoices and reports, invite a team, and let RecoverFlow send automatic payment reminders. It also includes a free invoice editor that needs no account and exports clean multi-page PDF and PNG invoices without uploading anything.
+
+Key facts:
+
+- Free editor: no sign-up, no time limit; data stays in the browser's local storage. Quotes, credit notes, receipts and proformas; 155 currencies (every circulating ISO 4217 currency, including LKR) and 8 number formats; tax IDs and legal footers.
+- Cloud workspace plans (billed monthly, prices exclude tax): Pro $12/month (1 user, 100 cloud invoices, payment reminders, recurring invoices, reports); Business $29/month (up to 5 users with roles, 500 cloud invoices, custom reminder schedules, advanced reports, priority support). Every new workspace gets a 14-day Pro trial, no card needed.
+- Payments are processed by Paddle.com, the Merchant of Record. 14-day money-back guarantee.
+- Cloud data is stored on servers in London (Supabase). Sign in with email or Google.
+- Not an e-invoicing platform (not a French PA or a Peppol access point) and not a legal archive.
+- Operated by SASU Invoice, Sri Lanka. Contact: suhaanas2025@gmail.com
+
+## Pages
+
+- [Home](https://sasuinvoice.netlify.app/): what SASU Invoice does, with an FAQ
+- [Invoice editor](https://sasuinvoice.netlify.app/app): the free editor, no account needed
+- [Pricing](https://sasuinvoice.netlify.app/pricing): Free, Pro and Business plans
+- [Create an account](https://sasuinvoice.netlify.app/dashboard/register): cloud workspace with a 14-day Pro trial
+
+## Policies
+
+- [Terms of service](https://sasuinvoice.netlify.app/terms)
+- [Privacy policy](https://sasuinvoice.netlify.app/privacy)
+- [Refund policy](https://sasuinvoice.netlify.app/refunds)

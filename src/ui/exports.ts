@@ -3,8 +3,15 @@
  * the editor itself stays small.
  */
 import { computeTotals } from '../core/calc';
+import { todayISO } from '../core/dates';
 import type { InvoiceState } from '../core/state';
-import { backupSchema, MAX_IMPORT_BYTES, type Backup, type CatalogItem, type Profile } from '../core/validate';
+import {
+  backupSchema,
+  MAX_IMPORT_BYTES,
+  type Backup,
+  type CatalogItem,
+  type Profile,
+} from '../core/validate';
 import { byId, downloadBlob, safeFileName } from './dom';
 import { showToast } from './toast';
 
@@ -77,7 +84,7 @@ export function downloadBackup(
     catalog,
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-  const date = new Date().toISOString().slice(0, 10);
+  const date = todayISO();
   downloadBlob(blob, safeFileName(`sasu-invoice-backup-${date}`, 'json'));
 }
 

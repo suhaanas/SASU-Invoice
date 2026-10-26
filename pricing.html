@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pricing | SASU Invoice</title>
+    <meta name="description" content="SASU Invoice pricing: a free invoice editor forever, plus Pro ($12/month) and Business ($29/month) for cloud invoices, clients, team members and automatic payment reminders." />
+    <link rel="canonical" href="https://sasuinvoice.netlify.app/pricing" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="SASU Invoice" />
+    <meta property="og:url" content="https://sasuinvoice.netlify.app/pricing" />
+    <meta property="og:title" content="Pricing | SASU Invoice" />
+    <meta property="og:description" content="SASU Invoice pricing: a free invoice editor forever, plus Pro ($12/month) and Business ($29/month) for cloud invoices, clients, team members and automatic payment reminders." />
+    <meta property="og:image" content="https://sasuinvoice.netlify.app/images/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://sasuinvoice.netlify.app/images/og-image.jpg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How does the free trial work?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Every new workspace starts on Pro for 14 days. You don’t need a card, and you can use every Pro feature, including automatic payment reminders."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What happens when the trial ends?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "If you don’t subscribe, your workspace moves to the Free plan. Nothing is deleted: your invoices stay readable, and the free editor keeps working. Subscribe any time to switch the cloud features back on."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I cancel any time?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Cancel from Settings → Billing in your workspace. You keep your plan until the end of the period you’ve paid for, and you won’t be charged again."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I switch between Pro and Business?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Change plan from Settings → Billing. The change is handled by our payment provider, Paddle, which works out any difference for the current period."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Are taxes included in the price?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Prices are in US dollars and exclude sales tax or VAT. Paddle adds the right tax for your country at checkout and shows it before you pay."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Who processes my payment?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Paddle.com is our Merchant of Record. It handles checkout, payment methods, tax, receipts and invoices for your subscription, so your card details never reach our servers."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do you offer refunds?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. You can ask for a full refund within 14 days of a payment. See the refund policy for details."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is the invoice editor really free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. The editor has no account, no limit and no trial. Paid plans are only for the cloud workspace: sending, tracking, reminders and teams."
+      }
+    }
+  ]
+}
+    </script>
+    <script type="module" src="/src/main-pricing.ts"></script>
+</head>
+
+<body>
+    <main class="view-wrap pricing-wrap">
+        <a class="view-brand" href="/">
+            <svg width="20" height="20" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                <rect width="22" height="22" rx="6" fill="#16181D" />
+                <path d="M6 7h10M6 11h7M6 15h5" stroke="#fff" stroke-width="2" stroke-linecap="round" />
+                <circle cx="17" cy="15" r="3" fill="#5B5EF4" />
+            </svg>
+            SASU Invoice
+        </a>
+        <header class="pricing-head">
+            <h1>Simple pricing. Get paid on time.</h1>
+            <p>Start with the free editor, or try Pro free for 14 days with no card. Upgrade when you want invoices
+                sent, tracked and followed up for you.</p>
+        </header>
+        <div id="plans" class="pricing-grid" aria-live="polite"></div>
+        <section class="compare-wrap" aria-labelledby="compare-title">
+            <h2 id="compare-title">Compare plans</h2>
+            <div id="compare" class="compare-scroll"></div>
+        </section>
+        <section class="pricing-faq" aria-labelledby="pricing-faq-title">
+            <h2 id="pricing-faq-title">Billing questions</h2>
+            <details>
+                <summary>How does the free trial work?</summary>
+                <p>Every new workspace starts on Pro for 14 days. You don’t need a card, and you can use every Pro feature, including automatic payment reminders.</p>
+            </details>
+            <details>
+                <summary>What happens when the trial ends?</summary>
+                <p>If you don’t subscribe, your workspace moves to the Free plan. Nothing is deleted: your invoices stay readable, and the free editor keeps working. Subscribe any time to switch the cloud features back on.</p>
+            </details>
+            <details>
+                <summary>Can I cancel any time?</summary>
+                <p>Yes. Cancel from Settings → Billing in your workspace. You keep your plan until the end of the period you’ve paid for, and you won’t be charged again.</p>
+            </details>
+            <details>
+                <summary>Can I switch between Pro and Business?</summary>
+                <p>Yes. Change plan from Settings → Billing. The change is handled by our payment provider, Paddle, which works out any difference for the current period.</p>
+            </details>
+            <details>
+                <summary>Are taxes included in the price?</summary>
+                <p>No. Prices are in US dollars and exclude sales tax or VAT. Paddle adds the right tax for your country at checkout and shows it before you pay.</p>
+            </details>
+            <details>
+                <summary>Who processes my payment?</summary>
+                <p>Paddle.com is our Merchant of Record. It handles checkout, payment methods, tax, receipts and invoices for your subscription, so your card details never reach our servers.</p>
+            </details>
+            <details>
+                <summary>Do you offer refunds?</summary>
+                <p>Yes. You can ask for a full refund within 14 days of a payment. See the <a href="/refunds.html">refund policy</a> for details.</p>
+            </details>
+            <details>
+                <summary>Is the invoice editor really free?</summary>
+                <p>Yes. The editor has no account, no limit and no trial. Paid plans are only for the cloud workspace: sending, tracking, reminders and teams.</p>
+            </details>
+        </section>
+        <p class="view-note">Prices exclude any sales tax or VAT, which our payment provider adds where required at
+            checkout. Cancel any time; you keep access until the end of the period you paid for. Payments are
+            processed by Paddle.com, our Merchant of Record. New plans come with a
+            <a href="/refunds.html">14-day money-back guarantee</a>.</p>
+        <nav class="legal-nav" aria-label="Legal"><a href="/terms.html">Terms of service</a><a
+                href="/privacy.html">Privacy policy</a><a href="/refunds.html">Refund policy</a></nav>
+    </main>
+</body>
+
+</html>

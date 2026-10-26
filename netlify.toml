@@ -2,20 +2,48 @@
   command = "npm run build"
   publish = "dist"
 
+# Production build guard (scripts/check-env.mjs): blocks VITE_* secrets always,
+# and missing cloud settings once REQUIRE_CLOUD=1 is set in Netlify.
+[context.production]
+  command = "npm run check:env && npm run build"
+
 [build.environment]
   NODE_VERSION = "24"
+
+# The dashboard is a client-routed SPA.
+[[redirects]]
+  from = "/dashboard/*"
+  to = "/dashboard.html"
+  status = 200
 
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://api.producthunt.com; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none'; upgrade-insecure-requests"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://cdn.paddle.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://api.producthunt.com https://*.supabase.co; font-src 'self' data:; connect-src 'self' data: blob: https://*.supabase.co wss://*.supabase.co https://*.paddle.com; worker-src 'self' blob:; frame-src https://*.paddle.com https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none'; upgrade-insecure-requests"
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(self \"https://buy.paddle.com\" \"https://sandbox-buy.paddle.com\"), usb=(), interest-cohort=()"
     Cross-Origin-Opener-Policy = "same-origin"
     Cross-Origin-Resource-Policy = "same-origin"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+
+# Checkout page: never indexed or cached.
+[[headers]]
+  for = "/pay.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Cache-Control = "no-store"
+    # The URL carries the checkout's transaction id; never send it to other sites.
+    Referrer-Policy = "no-referrer"
+
+# Client invoice view: never indexed, never leaks its URL.
+[[headers]]
+  for = "/invoice.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
 
 [[headers]]
   for = "/assets/*"

@@ -2,8 +2,8 @@
  * Invoice data model and a minimal observable store.
  * The UI renders from this state; DOM inputs only ever write into it.
  */
-import type { CurrencyCode, LocaleCode } from './money';
-import { dueDateFor, isBefore, todayISO, type DueTerm } from './dates';
+import type { CurrencyCode, LocaleCode } from './money.ts';
+import { dueDateFor, isBefore, todayISO, type DueTerm } from './dates.ts';
 
 export const DOC_TYPES = ['invoice', 'quote', 'credit', 'receipt', 'proforma'] as const;
 export type DocType = (typeof DOC_TYPES)[number];

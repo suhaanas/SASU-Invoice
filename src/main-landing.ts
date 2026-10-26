@@ -13,10 +13,12 @@ import './styles/landing.css';
 import { initFeatures } from './landing/features';
 import { initHero } from './landing/hero';
 import { initHow } from './landing/how';
+import { initSession } from './landing/session';
 
 initHero();
 initFeatures();
 initHow();
+initSession();
 
 // Nav gains a hairline once the page scrolls.
 const nav = document.querySelector('.nav');

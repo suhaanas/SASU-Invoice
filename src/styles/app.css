@@ -131,6 +131,10 @@ kbd {
     transition: background-color 0.12s, border-color 0.12s, color 0.12s;
 }
 
+a.btn {
+    text-decoration: none;
+}
+
 .btn-primary {
     background: var(--brand);
     color: #fff;
@@ -1873,5 +1877,64 @@ input[type='number']::-webkit-outer-spin-button {
 @media (max-width: 1100px) {
     #issueBtn {
         display: none;
+    }
+}
+
+/* "Get paid faster" prompt (src/editor/upsell.ts) */
+
+.upsell-link {
+    color: var(--brand-ink);
+}
+
+.upsell-card {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 90;
+    width: min(360px, calc(100vw - 32px));
+    padding: 18px 18px 16px;
+    border-radius: 14px;
+    background: var(--ink);
+    color: #fff;
+    box-shadow: 0 20px 50px -12px rgba(22, 24, 29, 0.55);
+}
+
+.upsell-title {
+    margin: 0 24px 6px 0;
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.upsell-text {
+    margin: 0 0 14px;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 13.5px;
+    line-height: 1.5;
+}
+
+.upsell-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.upsell-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+@media print {
+    .upsell-card,
+    .upsell-link {
+        display: none !important;
     }
 }

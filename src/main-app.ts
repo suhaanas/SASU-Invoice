@@ -10,7 +10,7 @@ import './styles/sheet.css';
 import './styles/app.css';
 
 import { computeTotals } from './core/calc';
-import { DUE_TERMS, dueDateFor, formatDate } from './core/dates';
+import { DUE_TERMS, dueDateFor, formatDate, todayISO } from './core/dates';
 import { CURRENCIES, LOCALES, formatMoney } from './core/money';
 import {
   ACCENTS,
@@ -31,7 +31,7 @@ import {
 } from './core/state';
 import { LEGAL_MENTIONS, legalWarnings } from './core/legal';
 import { creditNoteFor, duplicateDoc, invoiceFromQuote, repeatNextPeriod } from './core/lifecycle';
-import { SERIES_PREFIX, findDuplicate, nextNumber } from './core/numbering';
+import { findDuplicate, nextNumber, seriesPrefix, type Prefixes } from './core/numbering';
 import { paymentQr } from './core/payment';
 import {
   applyProfile,
@@ -39,6 +39,7 @@ import {
   clientBook,
   loadCurrentId,
   loadLastBackup,
+  loadInvoicePrefix,
   loadInvoices,
   loadProfile,
   profileFromInvoice,
@@ -49,6 +50,9 @@ import {
 } from './core/storage';
 import { documentsToCsv } from './core/csv';
 import { initCatalog } from './editor/catalog';
+import { initCloudSync } from './editor/cloud';
+import { initUpsell } from './editor/upsell';
+import { cloudConfig } from './cloud/config';
 import { initPwa } from './editor/pwa';
 import { NOTE_TONES, suggestNote, type NoteTone } from './core/suggestions';
 import type { Profile } from './core/validate';
@@ -63,10 +67,11 @@ import { showToast } from './ui/toast';
 
 let invoices = loadInvoices();
 let profile: Profile | null = loadProfile();
+const prefixes: Prefixes = { invoice: loadInvoicePrefix() };
 
 function freshInvoice(type: DocType = 'invoice'): InvoiceState {
   const inv = createInvoice({ docType: type });
-  inv.meta.number = nextNumber(type, invoices);
+  inv.meta.number = nextNumber(type, invoices, undefined, prefixes);
   inv.meta.status = STATUSES_BY_TYPE[type][0]!;
   return profile ? applyProfile(inv, profile) : inv;
 }
@@ -133,8 +138,11 @@ function onFieldInput(e: Event): void {
 function onDocTypeChange(before: InvoiceState, s: InvoiceState): void {
   const allowed = STATUSES_BY_TYPE[s.docType];
   if (!allowed.includes(s.meta.status)) s.meta.status = allowed[0]!;
-  if (s.meta.issuedAt === null && s.meta.number.startsWith(SERIES_PREFIX[before.docType])) {
-    s.meta.number = nextNumber(s.docType, invoices, s.id);
+  if (
+    s.meta.issuedAt === null &&
+    s.meta.number.startsWith(seriesPrefix(before.docType, prefixes))
+  ) {
+    s.meta.number = nextNumber(s.docType, invoices, s.id, prefixes);
   }
   if (s.docType === 'credit' && !s.ref) s.ref = { number: '', date: '' };
   if (s.docType === 'quote' && !s.meta.validUntil) s.meta.validUntil = s.meta.dueDate;
@@ -156,21 +164,41 @@ function syncForm(s: InvoiceState): void {
 // --- Static UI setup --------------------------------------------------------
 
 function fillSelect(select: HTMLSelectElement, options: { value: string; label: string }[]): void {
-  select.replaceChildren(...options.map((o) => el('option', { text: o.label, attrs: { value: o.value } })));
+  select.replaceChildren(
+    ...options.map((o) => el('option', { text: o.label, attrs: { value: o.value } })),
+  );
 }
 
 document.querySelectorAll<HTMLSelectElement>('select[data-options]').forEach((sel) => {
   const kind = sel.dataset.options;
-  if (kind === 'currency') fillSelect(sel, CURRENCIES.map((c) => ({ value: c.code, label: `${c.code} — ${c.name}` })));
-  if (kind === 'locale') fillSelect(sel, LOCALES.map((l) => ({ value: l.code, label: l.name })));
-  if (kind === 'dueTerm') fillSelect(sel, DUE_TERMS.map((t) => ({ value: t.id, label: t.label })));
+  if (kind === 'currency')
+    fillSelect(
+      sel,
+      CURRENCIES.map((c) => ({ value: c.code, label: `${c.code} — ${c.name}` })),
+    );
+  if (kind === 'locale')
+    fillSelect(
+      sel,
+      LOCALES.map((l) => ({ value: l.code, label: l.name })),
+    );
+  if (kind === 'dueTerm')
+    fillSelect(
+      sel,
+      DUE_TERMS.map((t) => ({ value: t.id, label: t.label })),
+    );
 });
 
 byId('colorGrid').replaceChildren(
   ...ACCENTS.map((a) => {
     const b = el('button', {
       class: 'swatch',
-      attrs: { type: 'button', 'data-color': a.color, 'aria-label': a.name, title: a.name, 'aria-pressed': 'false' },
+      attrs: {
+        type: 'button',
+        'data-color': a.color,
+        'aria-label': a.name,
+        title: a.name,
+        'aria-pressed': 'false',
+      },
     });
     b.style.setProperty('--c', a.color);
     return b;
@@ -216,16 +244,18 @@ function switchTab(targetId: string): void {
     t.classList.toggle('active', active);
     t.setAttribute('aria-selected', String(active));
   });
-  ['colDetails', 'colPreview', 'colExport'].forEach((id) => byId(id).classList.toggle('active-tab', id === targetId));
+  ['colDetails', 'colPreview', 'colExport'].forEach((id) =>
+    byId(id).classList.toggle('active-tab', id === targetId),
+  );
   if (MOBILE.matches) byId(targetId).scrollTop = 0;
 }
 tabs.forEach((t) => t.addEventListener('click', () => switchTab(t.dataset.target!)));
-document.querySelectorAll<HTMLElement>('[data-goto]').forEach((b) =>
-  b.addEventListener('click', () => switchTab(b.dataset.goto!)),
-);
-document.querySelectorAll<HTMLElement>('[data-proxy]').forEach((b) =>
-  b.addEventListener('click', () => byId(b.dataset.proxy!).click()),
-);
+document
+  .querySelectorAll<HTMLElement>('[data-goto]')
+  .forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.goto!)));
+document
+  .querySelectorAll<HTMLElement>('[data-proxy]')
+  .forEach((b) => b.addEventListener('click', () => byId(b.dataset.proxy!).click()));
 
 // --- Field events -----------------------------------------------------------
 
@@ -280,12 +310,12 @@ function renderLogoField(logo: string): void {
       thumb.replaceChildren(el('img', { attrs: { src: logo, alt: '' } }));
     }
   } else if (img) {
-    thumb.replaceChildren(
-      icon(['M5 6.5h0', 'M3.5 13l4-4 3.5 3.5 2-2 3.5 3.5'], 18, '0 0 20 20'),
-    );
+    thumb.replaceChildren(icon(['M5 6.5h0', 'M3.5 13l4-4 3.5 3.5 2-2 3.5 3.5'], 18, '0 0 20 20'));
   }
   byId('logoTitle').textContent = logo ? 'Replace logo' : 'Upload logo';
-  byId('logoSub').textContent = logo ? 'Click or drop a new file' : 'PNG, JPEG or WebP, up to 2 MB. Or drop it here.';
+  byId('logoSub').textContent = logo
+    ? 'Click or drop a new file'
+    : 'PNG, JPEG or WebP, up to 2 MB. Or drop it here.';
 }
 byId('removeLogoBtn').addEventListener('click', () => store.update((s) => (s.style.logo = '')));
 
@@ -299,15 +329,20 @@ byId<HTMLInputElement>('customColor').addEventListener('input', (e) => {
   if (/^#[0-9a-fA-F]{6}$/.test(v)) store.update((s) => (s.style.accent = v.toLowerCase()));
 });
 
-document.querySelectorAll<HTMLButtonElement>('.shape-btn').forEach((btn) =>
-  btn.addEventListener('click', () => store.update((s) => (s.style.logoShape = btn.dataset.shape as LogoShape))),
-);
+document
+  .querySelectorAll<HTMLButtonElement>('.shape-btn')
+  .forEach((btn) =>
+    btn.addEventListener('click', () =>
+      store.update((s) => (s.style.logoShape = btn.dataset.shape as LogoShape)),
+    ),
+  );
 
 document.querySelectorAll<HTMLButtonElement>('[data-discount-type]').forEach((btn) =>
   btn.addEventListener('click', () =>
     store.update((s) => {
       s.totals.discountType = btn.dataset.discountType as DiscountType;
-      if (s.totals.discountType === 'percent') s.totals.discountValue = Math.min(100, s.totals.discountValue);
+      if (s.totals.discountType === 'percent')
+        s.totals.discountValue = Math.min(100, s.totals.discountValue);
     }),
   ),
 );
@@ -316,7 +351,9 @@ document.querySelectorAll<HTMLButtonElement>('[data-discount-type]').forEach((bt
 byId('suggestNoteBtn').addEventListener('click', () => {
   const s = store.get();
   const toneValue = byId<HTMLSelectElement>('noteTone').value;
-  const tone: NoteTone = (NOTE_TONES as readonly string[]).includes(toneValue) ? (toneValue as NoteTone) : 'friendly';
+  const tone: NoteTone = (NOTE_TONES as readonly string[]).includes(toneValue)
+    ? (toneValue as NoteTone)
+    : 'friendly';
   const note = suggestNote(tone, {
     client: s.client.name.split(' ')[0] ?? '',
     business: s.business.name,
@@ -335,7 +372,10 @@ function renderClientPicker(): void {
   clientPicker.replaceChildren(
     el('option', { text: 'Choose a previous client…', attrs: { value: '' } }),
     ...clients.map((c, i) =>
-      el('option', { text: [c.name, c.company].filter(Boolean).join(' — '), attrs: { value: String(i) } }),
+      el('option', {
+        text: [c.name, c.company].filter(Boolean).join(' — '),
+        attrs: { value: String(i) },
+      }),
     ),
   );
 }
@@ -347,16 +387,24 @@ clientPicker.addEventListener('change', () => {
 
 // --- Exports ----------------------------------------------------------------
 
-document.querySelectorAll<HTMLElement>('[data-action="pdf"]').forEach((b) =>
-  b.addEventListener('click', () => void exportPDF(store.get())),
-);
+const upsell = initUpsell();
+document
+  .querySelectorAll<HTMLElement>('[data-action="pdf"]')
+  .forEach((b) =>
+    b.addEventListener(
+      'click',
+      () => void exportPDF(store.get()).then(() => upsell?.afterExport()),
+    ),
+  );
 document.querySelectorAll<HTMLElement>('[data-action="png"]').forEach((b) =>
   b.addEventListener('click', () => {
     switchTab('colPreview');
-    void exportPNG(store.get());
+    void exportPNG(store.get()).then(() => upsell?.afterExport());
   }),
 );
-document.querySelectorAll<HTMLElement>('[data-action="print"]').forEach((b) => b.addEventListener('click', exportPrint));
+document
+  .querySelectorAll<HTMLElement>('[data-action="print"]')
+  .forEach((b) => b.addEventListener('click', exportPrint));
 
 // --- Persistence ------------------------------------------------------------
 
@@ -365,6 +413,24 @@ let saveTimer: ReturnType<typeof setTimeout> | undefined;
 let dirty = false;
 /** Set while resetting to the sample after a wipe, so it isn't re-saved. */
 let suppressSave = false;
+
+/** Optional cloud copy (null unless enabled for this browser in the dashboard). */
+const cloudSync = initCloudSync(
+  (status) => {
+    indicator.classList.remove('error');
+    if (status.kind === 'syncing') indicator.textContent = 'Saved · syncing…';
+    else if (status.kind === 'synced') indicator.textContent = 'Saved · synced to cloud';
+    else indicator.textContent = status.message;
+  },
+  ({ id, amountPaid, status }) => {
+    if (store.get().id !== id) return;
+    store.update((d) => {
+      d.totals.amountPaid = amountPaid;
+      d.meta.status = status;
+    });
+    showToast('Amount paid and status follow the payments recorded in the dashboard');
+  },
+);
 
 function persist(): void {
   clearTimeout(saveTimer);
@@ -382,6 +448,7 @@ function persist(): void {
   indicator.classList.toggle('error', !ok);
   if (ok && !persistAsked) void requestPersistence();
   renderDataPanel();
+  cloudSync?.queue(current);
 }
 
 function scheduleSave(): void {
@@ -414,14 +481,22 @@ function issueCurrent(): void {
   if (isLocked(s)) return;
   const title = DOC_TITLES[s.docType].toLowerCase();
   let number = s.meta.number.trim();
-  if (!number) number = nextNumber(s.docType, invoices, s.id);
+  if (!number) number = nextNumber(s.docType, invoices, s.id, prefixes);
   const dup = findDuplicate({ ...s, meta: { ...s.meta, number } }, invoices);
   if (dup) {
-    showToast(`Number ${number} is already used by another ${title}. Change it before issuing.`, 'error');
+    showToast(
+      `Number ${number} is already used by another ${title}. Change it before issuing.`,
+      'error',
+    );
     byId('f-number').focus();
     return;
   }
-  if (!confirm(`Issue ${title} #${number}? It will be locked so the issued version can't change by accident.`)) return;
+  if (
+    !confirm(
+      `Issue ${title} #${number}? It will be locked so the issued version can't change by accident.`,
+    )
+  )
+    return;
   store.update((d) => {
     d.meta.number = number;
     d.meta.issuedAt = Date.now();
@@ -466,8 +541,19 @@ byId('clearBtn').addEventListener('click', () => {
     return;
   }
   if (!confirm('Clear this document? Your business details and style are kept.')) return;
-  const blank = createInvoice({ id: s.id, docType: s.docType, business: s.business, style: s.style, payment: s.payment });
-  blank.meta = { ...blank.meta, number: s.meta.number, currency: s.meta.currency, locale: s.meta.locale };
+  const blank = createInvoice({
+    id: s.id,
+    docType: s.docType,
+    business: s.business,
+    style: s.style,
+    payment: s.payment,
+  });
+  blank.meta = {
+    ...blank.meta,
+    number: s.meta.number,
+    currency: s.meta.currency,
+    locale: s.meta.locale,
+  };
   blank.notes = {
     ...blank.notes,
     paymentTerms: s.notes.paymentTerms,
@@ -501,13 +587,21 @@ function matchesFilter(inv: InvoiceState, f: DrawerFilter): boolean {
 
 /** Outstanding balance per currency across unpaid and overdue invoices. */
 function outstandingSummary(): string {
-  const byCurrency = new Map<string, { minor: number; locale: string; count: number; overdue: number }>();
+  const byCurrency = new Map<
+    string,
+    { minor: number; locale: string; count: number; overdue: number }
+  >();
   for (const inv of invoices) {
     if (inv.docType !== 'invoice') continue;
     const st = effectiveStatus(inv);
     if (st !== 'Unpaid' && st !== 'Overdue') continue;
     const bal = computeTotals(inv).balance;
-    const e = byCurrency.get(inv.meta.currency) ?? { minor: 0, locale: inv.meta.locale, count: 0, overdue: 0 };
+    const e = byCurrency.get(inv.meta.currency) ?? {
+      minor: 0,
+      locale: inv.meta.locale,
+      count: 0,
+      overdue: 0,
+    };
     e.minor += bal;
     e.count += 1;
     if (st === 'Overdue') e.overdue += 1;
@@ -529,18 +623,21 @@ function renderInvoiceList(): void {
     .filter(
       (inv) =>
         !q ||
-        [inv.meta.number, inv.client.name, inv.client.company].some((v) => v.toLowerCase().includes(q)),
+        [inv.meta.number, inv.client.name, inv.client.company].some((v) =>
+          v.toLowerCase().includes(q),
+        ),
     );
   byId('drawerSummary').textContent = outstandingSummary();
-  document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach((b) =>
-    b.setAttribute('aria-pressed', String(b.dataset.filter === drawerFilter)),
-  );
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-filter]')
+    .forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.filter === drawerFilter)));
   const currentId = store.get().id;
   const list = byId('invoiceList');
   if (sorted.length === 0) {
-    const text = q || drawerFilter !== 'all'
-      ? 'No documents match.'
-      : 'No saved documents yet. They appear here as you work.';
+    const text =
+      q || drawerFilter !== 'all'
+        ? 'No documents match.'
+        : 'No saved documents yet. They appear here as you work.';
     list.replaceChildren(el('li', { class: 'dlg-empty', text }));
     return;
   }
@@ -557,27 +654,42 @@ function renderInvoiceList(): void {
         inv.docType === 'quote' && st !== 'Declined' ? btn('convert', 'Convert to invoice') : null,
         owed ? btn('remind', 'Remind') : null,
         owed ? btn('paid', 'Mark paid') : null,
-        inv.docType === 'invoice' && inv.meta.issuedAt !== null ? btn('credit', 'Credit note') : null,
+        inv.docType === 'invoice' && inv.meta.issuedAt !== null
+          ? btn('credit', 'Credit note')
+          : null,
         btn('repeat', 'Repeat next month'),
         btn('dup', 'Duplicate'),
         btn('del', 'Delete', 'mini-btn danger'),
       ]);
-      return el('li', { class: `dlg-item${inv.id === currentId ? ' current' : ''}`, attrs: { 'data-id': inv.id } }, [
-        el('div', { class: 'dlg-main' }, [
-          el('span', { class: 'dlg-num' }, [
-            `#${inv.meta.number}`,
-            el('span', { class: 'dlg-type', text: DOC_TITLES[inv.docType] }),
-            inv.meta.issuedAt !== null ? el('span', { class: 'dlg-lock', text: 'Issued' }) : null,
+      return el(
+        'li',
+        {
+          class: `dlg-item${inv.id === currentId ? ' current' : ''}`,
+          attrs: { 'data-id': inv.id },
+        },
+        [
+          el('div', { class: 'dlg-main' }, [
+            el('span', { class: 'dlg-num' }, [
+              `#${inv.meta.number}`,
+              el('span', { class: 'dlg-type', text: DOC_TITLES[inv.docType] }),
+              inv.meta.issuedAt !== null ? el('span', { class: 'dlg-lock', text: 'Issued' }) : null,
+            ]),
+            el('span', { class: 'dlg-who', text: who }),
+            el('span', {
+              class: 'dlg-date',
+              text: formatDate(inv.meta.issueDate, inv.meta.locale),
+            }),
           ]),
-          el('span', { class: 'dlg-who', text: who }),
-          el('span', { class: 'dlg-date', text: formatDate(inv.meta.issueDate, inv.meta.locale) }),
-        ]),
-        el('div', { class: 'dlg-side' }, [
-          el('span', { class: 'dlg-total', text: formatMoney(owed ? t.balance : t.total, inv.meta.currency, inv.meta.locale) }),
-          el('span', { class: `inv-status ${st.toLowerCase()}`, text: st }),
-        ]),
-        actions,
-      ]);
+          el('div', { class: 'dlg-side' }, [
+            el('span', {
+              class: 'dlg-total',
+              text: formatMoney(owed ? t.balance : t.total, inv.meta.currency, inv.meta.locale),
+            }),
+            el('span', { class: `inv-status ${st.toLowerCase()}`, text: st }),
+          ]),
+          actions,
+        ],
+      );
     }),
   );
 }
@@ -722,7 +834,7 @@ byId('csvBtn').addEventListener('click', () => {
   }
   // BOM so Excel opens accented text as UTF-8.
   const blob = new Blob(['\ufeff', documentsToCsv(invoices)], { type: 'text/csv;charset=utf-8' });
-  downloadBlob(blob, safeFileName(`sasu-invoices-${new Date().toISOString().slice(0, 10)}`, 'csv'));
+  downloadBlob(blob, safeFileName(`sasu-invoices-${todayISO()}`, 'csv'));
   showToast('CSV downloaded');
 });
 
@@ -760,7 +872,9 @@ async function requestPersistence(ask = true): Promise<void> {
       persistAsked = true;
       persisted = await navigator.storage.persist();
     }
-    note.textContent = persisted ? 'This browser has agreed not to clear your data automatically.' : fallback;
+    note.textContent = persisted
+      ? 'This browser has agreed not to clear your data automatically.'
+      : fallback;
   } catch {
     note.textContent = fallback;
   }
@@ -775,7 +889,12 @@ importInput.addEventListener('change', async () => {
   try {
     const backup = await readBackup(file);
     const n = backup.invoices.length;
-    if (!confirm(`Import ${n} invoice${n === 1 ? '' : 's'}? Invoices with the same ID will be replaced.`)) return;
+    if (
+      !confirm(
+        `Import ${n} invoice${n === 1 ? '' : 's'}? Invoices with the same ID will be replaced.`,
+      )
+    )
+      return;
     persist();
     // Logos from a file are untrusted: run them through the upload checks again.
     let dropped = 0;
@@ -793,7 +912,8 @@ importInput.addEventListener('change', async () => {
       profile = backup.profile;
       saveProfile(profile);
     }
-    if (!saveInvoices(invoices)) showToast('Imported, but browser storage is full; some data may not persist.', 'error');
+    if (!saveInvoices(invoices))
+      showToast('Imported, but browser storage is full; some data may not persist.', 'error');
     const first = backup.invoices[0];
     if (first) load(first);
     showToast(
@@ -806,7 +926,12 @@ importInput.addEventListener('change', async () => {
 });
 
 byId('wipeBtn').addEventListener('click', () => {
-  if (!confirm('Delete ALL invoices, clients and your business profile from this browser? This cannot be undone. Download a backup first if you need one.')) return;
+  if (
+    !confirm(
+      'Delete ALL invoices, clients and your business profile from this browser? This cannot be undone. Download a backup first if you need one.',
+    )
+  )
+    return;
   clearTimeout(saveTimer);
   dirty = false;
   clearAllData();
@@ -886,7 +1011,9 @@ function renderChrome(s: InvoiceState, totals: ReturnType<typeof computeTotals>)
   const n = s.items.length;
   const summaries: Record<string, string> = {
     biz: s.business.name,
-    inv: [s.meta.currency, s.meta.dueDate ? `due ${formatDate(s.meta.dueDate, s.meta.locale)}` : ''].filter(Boolean).join(', '),
+    inv: [s.meta.currency, s.meta.dueDate ? `due ${formatDate(s.meta.dueDate, s.meta.locale)}` : '']
+      .filter(Boolean)
+      .join(', '),
     client: s.client.company || s.client.name || 'Not set',
     items: `${n} ${n === 1 ? 'item' : 'items'}, ${money}`,
     notes: s.notes.bankDetails ? 'Includes bank details' : '',
@@ -902,7 +1029,10 @@ function renderDocState(s: InvoiceState, totals: ReturnType<typeof computeTotals
   const statusSel = byId<HTMLSelectElement>('f-status');
   const allowed = STATUSES_BY_TYPE[s.docType];
   if (statusSel.dataset.type !== s.docType) {
-    fillSelect(statusSel, allowed.map((v) => ({ value: v, label: v })));
+    fillSelect(
+      statusSel,
+      allowed.map((v) => ({ value: v, label: v })),
+    );
     statusSel.dataset.type = s.docType;
     statusSel.value = s.meta.status;
   }
@@ -946,13 +1076,18 @@ function renderDocState(s: InvoiceState, totals: ReturnType<typeof computeTotals
   issueBtn.textContent = `Issue ${DOC_TITLES[s.docType].toLowerCase()}`;
   byId('lockBanner').hidden = !locked;
   if (locked) {
-    const when = new Date(s.meta.issuedAt!).toLocaleDateString(s.meta.locale, { dateStyle: 'medium' });
-    byId('lockText').textContent = `${DOC_TITLES[s.docType]} issued on ${when} and locked. To correct it, create a credit note.`;
+    const when = new Date(s.meta.issuedAt!).toLocaleDateString(s.meta.locale, {
+      dateStyle: 'medium',
+    });
+    byId('lockText').textContent =
+      `${DOC_TITLES[s.docType]} issued on ${when} and locked. To correct it, create a credit note.`;
     byId('creditFromLockBtn').hidden = s.docType !== 'invoice';
   }
   byId('colDetails').classList.toggle('is-locked', locked);
   document
-    .querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement>(
+    .querySelectorAll<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement
+    >(
       '#invoiceForm input, #invoiceForm select, #invoiceForm textarea, #invoiceForm button:not(.sec-header), .inspector .field-grid input, .inspector .combo button, #clearBtn',
     )
     .forEach((node) => {
@@ -1008,5 +1143,21 @@ renderAll(store.get());
 renderClientPicker();
 renderDataPanel();
 void requestPersistence(invoices.length > 0);
+
+byId('dashboardLink').hidden = !cloudConfig;
+void cloudSync?.openFromUrl().then((doc) => {
+  if (!doc) return;
+  invoices = [doc, ...invoices.filter((i) => i.id !== doc.id)];
+  saveInvoices(invoices);
+  load(doc);
+  showToast(`Opened #${doc.meta.number} from the cloud`);
+});
+void cloudSync?.clientFromUrl().then((client) => {
+  if (!client) return;
+  const inv = freshInvoice();
+  inv.client = client;
+  load(inv);
+  showToast(`New invoice for ${client.company || client.name}`);
+});
 initPwa();
 if (MOBILE.matches) switchTab('colDetails');
