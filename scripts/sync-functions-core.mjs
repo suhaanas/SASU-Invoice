@@ -22,7 +22,7 @@ for (const file of FILES) {
   // Supabase's server-side bundler ignores import maps, so pin npm specifiers.
   const expected =
     HEADER +
-    readFileSync(resolve(root, 'src/core', file), 'utf8').replace(/from 'zod';/g, "from 'npm:zod@4.6.5';");
+    readFileSync(resolve(root, 'src/core', file), 'utf8').replace(/from 'zod';/g, "from 'npm:zod@4.6.7';");
   const target = resolve(outDir, file);
   if (check) {
     if (!existsSync(target) || readFileSync(target, 'utf8') !== expected) stale.push(file);

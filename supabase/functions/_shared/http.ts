@@ -33,6 +33,23 @@ export function json(
   });
 }
 
+/**
+ * Read a JSON body of at most `maxBytes` (checked on the declared length and on
+ * what actually arrives). Returns `undefined` when too large, `null` when not
+ * valid JSON, so callers can answer 413 / 400.
+ */
+export async function readJson(req: Request, maxBytes: number): Promise<unknown | undefined> {
+  const declared = Number(req.headers.get('Content-Length') ?? '0');
+  if (declared > maxBytes) return undefined;
+  const text = await req.text();
+  if (new TextEncoder().encode(text).length > maxBytes) return undefined;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 /** SQLSTATEs raised by our SQL functions (see migrations) → HTTP status. */
 const SQL_STATUS: Record<string, number> = {
   SA401: 401,

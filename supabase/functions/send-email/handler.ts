@@ -6,7 +6,7 @@
  * `requestId` (a UUID made by the browser per click) is the idempotency key:
  * a double click or a network retry returns the first attempt's result.
  */
-import { z } from 'npm:zod@4.6.5';
+import { z } from 'npm:zod@4.6.7';
 import {
   EMAIL_KINDS,
   MAX_BODY,
@@ -20,7 +20,7 @@ import {
   type EmailProvider,
   type SendContext,
 } from '../_shared/email.ts';
-import { corsHeaders, json, tooManyRequests, sqlErrorResponse } from '../_shared/http.ts';
+import { corsHeaders, json, readJson, sqlErrorResponse, tooManyRequests } from '../_shared/http.ts';
 import { overLimit, type Rpc } from '../_shared/supabase.ts';
 
 export interface Deps {
@@ -53,7 +53,9 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   if (!userId) return json(401, { error: 'Please sign in again', code: 'SA401' }, cors);
   if (await overLimit(deps.rpc, `send-email:${userId}`, 20)) return tooManyRequests(cors);
 
-  const parsed = bodySchema.safeParse(await req.json().catch(() => null));
+  const raw = await readJson(req, 65536);
+  if (raw === undefined) return json(413, { error: 'Request too large' }, cors);
+  const parsed = bodySchema.safeParse(raw);
   if (!parsed.success)
     return json(400, { error: 'Check the email fields and try again.', code: 'SA422' }, cors);
   const input = parsed.data;

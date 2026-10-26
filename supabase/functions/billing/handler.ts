@@ -10,9 +10,9 @@
  *
  * The plan shown in the app changes only when the provider's webhook confirms it.
  */
-import { z } from 'npm:zod@4.6.5';
+import { z } from 'npm:zod@4.6.7';
 import { BillingError, type BillingProvider } from '../_shared/billing.ts';
-import { corsHeaders, json, tooManyRequests, sqlErrorResponse } from '../_shared/http.ts';
+import { corsHeaders, json, readJson, sqlErrorResponse, tooManyRequests } from '../_shared/http.ts';
 import { overLimit, type Rpc } from '../_shared/supabase.ts';
 
 export interface Deps {
@@ -58,7 +58,9 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   if (!userId) return json(401, { error: 'Please sign in again', code: 'SA401' }, cors);
   if (await overLimit(deps.rpc, `billing:${userId}`, 10)) return tooManyRequests(cors);
 
-  const parsed = bodySchema.safeParse(await req.json().catch(() => null));
+  const raw = await readJson(req, 8192);
+  if (raw === undefined) return json(413, { error: 'Request too large' }, cors);
+  const parsed = bodySchema.safeParse(raw);
   if (!parsed.success) return json(400, { error: 'Invalid request', code: 'SA422' }, cors);
   const body = parsed.data;
   if (!deps.billing.configured) {

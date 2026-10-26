@@ -4,7 +4,7 @@
  * localStorage (may be stale or tampered with) and imported JSON files.
  * Unknown keys are stripped; out-of-range values are rejected.
  */
-import { z } from 'npm:zod@4.6.5';
+import { z } from 'npm:zod@4.6.7';
 import { CURRENCY_CODES, LOCALE_CODES } from './money.ts';
 import { DUE_TERM_IDS } from './dates.ts';
 import {

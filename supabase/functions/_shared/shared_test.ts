@@ -1,6 +1,7 @@
 import { redact } from './ai.ts';
 import { fromHeader, ResendProvider, templateVars, type OutgoingEmail } from './email.ts';
 import { safeEqual, svixSignature, verifySvix } from './webhook.ts';
+import { readJson } from './http.ts';
 
 function assertEquals(actual: unknown, expected: unknown, label: string) {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
@@ -135,4 +136,17 @@ Deno.test('redact masks emails, phone numbers and account numbers', () => {
   assertEquals(out.includes('NWBK'), false, 'iban');
   assertEquals(out.includes('4111'), false, 'card');
   assertEquals(out.includes('12th'), true, 'keeps ordinary text');
+});
+
+Deno.test('request bodies are capped before parsing', async () => {
+  const req = (body: string, length?: string) =>
+    new Request('https://fn.test', {
+      method: 'POST',
+      body,
+      headers: length ? { 'Content-Length': length } : {},
+    });
+  assertEquals(await readJson(req('{"a":1}'), 100), { a: 1 }, 'small JSON is read');
+  assertEquals(await readJson(req('not json'), 100), null, 'invalid JSON is null');
+  assertEquals(await readJson(req('{"a":"' + 'x'.repeat(200) + '"}'), 100), undefined, 'too large');
+  assertEquals(await readJson(req('{}', '5000000'), 100), undefined, 'declared length too large');
 });
