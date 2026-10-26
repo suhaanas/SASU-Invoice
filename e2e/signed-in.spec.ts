@@ -125,3 +125,17 @@ test('a new account sets up its workspace in one short form', async ({ page }) =
     '/app.html',
   );
 });
+
+test('the dashboard logo goes to the homepage, which knows you are signed in', async ({ page }) => {
+  await signedInOwner(page);
+  await page.goto('/dashboard/');
+  await expect(page.getByRole('heading', { name: 'Studio North', level: 1 })).toBeVisible();
+  await page.getByRole('link', { name: 'SASU Invoice home' }).first().click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Invoicing that gets you paid.');
+  const goToDashboard = page.locator('.nav').getByRole('link', { name: 'Go to dashboard' });
+  await expect(goToDashboard).toHaveAttribute('href', '/dashboard/');
+  await expect(page.locator('.nav').getByRole('link', { name: 'Sign in' })).toBeHidden();
+  await goToDashboard.click();
+  await expect(page.getByRole('heading', { name: 'Studio North', level: 1 })).toBeVisible();
+});

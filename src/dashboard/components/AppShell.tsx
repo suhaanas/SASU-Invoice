@@ -21,7 +21,7 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router';
+import { NavLink, Outlet, useNavigate } from 'react-router';
 import { useAuth } from '../lib/auth';
 import { canManage, useActiveOrg, useOrgs } from '../lib/org';
 import { useQueryClient } from '@tanstack/react-query';
@@ -44,10 +44,10 @@ const NAV = [
 
 export function Logo() {
   return (
-    <Link
-      to="/"
+    <a
+      href="/"
       className="flex items-center gap-2 font-display text-[15px] font-bold"
-      aria-label="SASU Invoice dashboard"
+      aria-label="SASU Invoice home"
     >
       <svg width="24" height="24" viewBox="0 0 22 22" fill="none" aria-hidden="true">
         <rect width="22" height="22" rx="6" fill="#16181D" />
@@ -55,7 +55,7 @@ export function Logo() {
         <circle cx="17" cy="15" r="3" fill="#5B5EF4" />
       </svg>
       SASU Invoice
-    </Link>
+    </a>
   );
 }
 
